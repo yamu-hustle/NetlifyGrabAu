@@ -27,3 +27,5 @@ dist-ssr
 storybook-static/
 # Local Netlify folder
 .netlify
+
+.env
