@@ -16,10 +16,7 @@
         }
 
         // Determine source based on path
-        if (path.indexOf('/ga') > -1) return `Assure ${region} Google Ads`
-        if (path.indexOf('/meta') > -1) return `Assure ${region} Meta Ads`
-        if (path.indexOf('/offer') > -1) return `Assure ${region} Meta Ads`
-        return `Assure ${region} Hustle Ads`
+        return `Assure${region}Campaign59`;
     }
 
     function getGclid() {
