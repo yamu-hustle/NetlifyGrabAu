@@ -1,0 +1,30 @@
+<header class="site-header fixed top-0 left-0 w-full py-4 bg-transparent z-[99] transition duration-300">
+    <div class="container px-4">
+        <div class="flex items-center justify-between items-center w-full">
+            <div class="">
+                <if condition="page === 'offer'">
+                    <a href="#top" class="w-[130px] lg:w-[202px] block">
+                        <span class="sr-only">Logo</span>
+                        <img width="202" src="logo.png" class="w-full">
+                    </a>
+                </if>
+                <else>
+                    <a href="#top" class="w-[130px] lg:w-[202px] block">
+                        <span class="sr-only">Logo</span>
+                        <img width="202" src="logo.png">
+                    </a>
+                </else>
+
+            </div>
+            <a href="tel:1300 689 108" class="flex items-center" title="phone">
+                <div class="md:mr-3">
+                    <icon class="w-10" src="phone.svg"></icon>
+                </div>
+                <div class="hidden lg:flex flex-col phone-text text-dark text-xl leading-tight">
+                    <span class="block text-base">Any Questions?</span>
+                    <em class="font-bold not-italic tracking-tighter">1300 689 108</em>
+                </div>
+            </a>
+        </div>
+    </div>
+</header>

@@ -1,0 +1,124 @@
+@import 'swiper/css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles should be used sparingly if at all. */
+@layer base {
+    @font-face {
+        font-family: 'Inter';
+        src: url('../fonts/Inter18pt-Regular.woff2') format('woff2'),
+            url('../fonts/Inter18pt-Regular.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap; 
+    }
+
+    @font-face {
+        font-family: 'Inter';
+        src: url('../fonts/Inter18pt-Bold.woff2') format('woff2'),
+            url('../fonts/Inter18pt-Bold.woff') format('woff');
+        font-weight: bold;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    @font-face {
+        font-family: 'Inter';
+        src: url('../fonts/Inter18pt-Medium.woff2') format('woff2'),
+            url('../fonts/Inter18pt-Medium.woff') format('woff');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    @font-face {
+        font-family: 'Inter';
+        src: url('../fonts/Inter18pt-SemiBold.woff2') format('woff2'),
+            url('../fonts/Inter18pt-SemiBold.woff') format('woff');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+    }
+
+
+
+    h1,h2,h3,h4,h5,h6{
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        line-height: 1.15;
+    }
+
+    p{
+        font-family: "Inter", sans-serif;
+    }
+
+    .field-error {
+        display: block;
+        margin: .5rem 0 1rem;
+        color: red;
+        font-size: 1rem;
+    }
+    .swiper-pagination-bullet.bg-sky-600{
+        background:#0FA4E4 !important;
+    }
+    .viewanimation{
+        opacity:0;
+        transition:0.3s linear all;
+        transform:translateY(30px);
+        &.animated {
+            opacity:1;
+            transform: none;
+        }
+    }
+
+    .circular-progress {
+      --size: 200px;
+      --half-size: calc(var(--size) / 2);
+      --stroke-width: 20px;
+      --radius: calc((var(--size) - var(--stroke-width)) / 2);
+      --circumference: calc(var(--radius) * pi * 2);
+      --dash: calc((var(--progress) * var(--circumference)) / 100);
+      &.animated {
+        animation: progress-animation 5s linear 0s 1 forwards;
+      }
+    }
+
+    .circular-progress circle {
+      cx: var(--half-size);
+      cy: var(--half-size);
+      r: var(--radius);
+      stroke-width: var(--stroke-width);
+      fill: none;
+      stroke-linecap: round;
+    }
+
+    .circular-progress circle.bg {
+      stroke: #ccc; 
+      
+    }
+
+    .circular-progress circle.fg {
+      transform: rotate(140deg);
+      transform-origin: var(--half-size) var(--half-size);
+      stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
+      transition: stroke-dasharray 0.3s linear 0s;
+      stroke: #11CC5C;
+    }
+
+    @property --progress {
+      syntax: "<number>";
+      inherits: false;
+      initial-value: 0;
+    }
+
+    @keyframes progress-animation {
+      from {
+        --progress: 0;
+      }
+      to {
+        --progress: 72;
+      }
+    }
+}

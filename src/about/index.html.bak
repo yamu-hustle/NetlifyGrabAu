@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <include src="gtm_header.html"></include>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Learn more about Assure Scratch & Dent - Your trusted mobile car repair service in Australia">
+    <meta name="keywords" content="about us, mobile car repair, scratch and dent repair, car body repair, vehicle repair service, Australia">
+    <meta name="robots" content="noindex">
+    <meta property="og:image" content="/og-image.jpg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.png">
+
+    <title>About Us - Assure Scratch & Dent</title>
+
+    <script type="text/javascript" src="//script.crazyegg.com/pages/scripts/0120/1668.js" async="async" ></script>
+</head>
+
+<body id="top" class="antialiased group/body">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PFDF2Z54"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <include src="section_header_with_phone.html" locals='{
+        "page": "about"
+    }'></include>
+
+    <!-- Hero Section -->
+    <section class="relative pt-24 pb-16 text-center text-black md:pt-28 md:pb-24 lg:py-32 lg:pb-24">
+        <div class="absolute top-0 left-0 z-10 w-full h-full pointer-events-none">
+            <img src="../assets/images/bg-01.png" class="object-cover w-full h-full select-none" />
+        </div>
+        <div class="container relative z-20 px-4">
+            <div class="flex flex-wrap justify-center">
+                <div class="w-full md:w-11/12">
+                    <h1 class="text-6xl md:text-8xl xl:text-9xl mb-5 leading-[1.1] tracking-tight font-bold">About Assure Scratch & Dent</h1>
+                    <p class="text-xl lg:text-2xl mb-8 max-w-4xl mx-auto">
+                        We're Australia's leading mobile car repair service, bringing professional scratch and dent repair right to your doorstep.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="container px-4">
+            <div class="max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-12 items-center mb-16">
+                    <div>
+                        <h2 class="text-4xl font-bold mb-6">Our Story</h2>
+                        <p class="text-lg text-gray-700 mb-4">
+                            Founded with a mission to make car repair convenient and affordable, Assure Scratch & Dent has been serving Australian motorists for years.
+                        </p>
+                        <p class="text-lg text-gray-700">
+                            We understand that life doesn't stop when your car gets damaged, which is why we bring our entire repair shop to you.
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <img src="../assets/images/logo.png" alt="Assure Logo" class="w-64 mx-auto">
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8 mb-16">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-sky-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">Fast Service</h3>
+                        <p class="text-gray-600">Most repairs completed in under 2 hours</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-sky-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">Lifetime Guarantee</h3>
+                        <p class="text-gray-600">All our work comes with a lifetime warranty</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-sky-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">Mobile Service</h3>
+                        <p class="text-gray-600">We come to you at home or work</p>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <a href="/" class="inline-block border-0 rounded-full text-lg tracking-wide font-bold bg-sky-500 px-8 py-4 text-white transition duration-500 hover:bg-sky-600 hover:text-white">
+                        Get Started Today
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer - King Kong Tag -->
+    <include src="section_footer.html" locals='{
+        "page": "about"
+    }'></include>
+
+    <!-- Custom Scripts -->
+    <script type="module" src="../global.js"></script>
+    <script type="module" src="./about.js"></script>
+</body>
+
+</html>

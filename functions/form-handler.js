@@ -1,0 +1,169 @@
+export const handler = async (event) => {
+    console.log("🚀 Function triggered with method:", event.httpMethod);
+    console.log("📝 Event body:", event.body);
+
+    // Health check endpoint
+    if (event.httpMethod === "GET") {
+        return {
+            statusCode: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            body: JSON.stringify({
+                message: "Form handler function is running and healthy",
+                timestamp: new Date().toISOString(),
+                version: "4.0"
+            })
+        };
+    }
+
+    // Only allow POST requests
+    if (event.httpMethod !== "POST") {
+        return {
+            statusCode: 405,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            body: JSON.stringify({ message: "Method Not Allowed" })
+        };
+    }
+
+    try {
+        // Parse the request body
+        let requestData;
+        try {
+            requestData = JSON.parse(event.body);
+        } catch (parseError) {
+            console.error("❌ Failed to parse JSON:", parseError);
+            return {
+                statusCode: 400,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                },
+                body: JSON.stringify({
+                    message: "Invalid JSON in request body",
+                    error: parseError.message
+                })
+            };
+        }
+
+        console.log("🔍 Parsed form data:", requestData);
+
+        // Extract form data
+        const data = requestData.payload?.data;
+        if (!data) {
+            return {
+                statusCode: 400,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                },
+                body: JSON.stringify({
+                    message: "Form data is missing",
+                    received: requestData
+                })
+            };
+        }
+
+        // Build Salesforce payload
+        const payload = {
+            "First Name": data.firstname || "",
+            "Last Name": data.lastname || "",
+            "Email": data.email || "",
+            "Mobile": data.phone || "",
+            "State": data.state || "",
+            "Comments or Questions": data.comment_or_question || "",
+            "Preferred Time to Call": data.time || "",
+            "Lead Source": data.leadSource || "Website Form"
+        };
+
+        if (data.gclid && data.gclid !== '') {
+            payload['Gclid'] = data.gclid;
+        }
+
+        console.log("🚀 Payload for Salesforce:", payload);
+
+        // Always call Salesforce API (debug mode removed)
+
+        // Call Salesforce API with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+        try {
+            console.log("🌐 Calling Salesforce API...");
+            const response = await fetch("https://business-ruby-13192.my.salesforce-sites.com/services/apexrest/CreateLeadAssure", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "User-Agent": "Netlify-Function/1.0"
+                },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            const responseText = await response.text();
+            console.log("📡 Salesforce response status:", response.status);
+            console.log("📡 Salesforce response text:", responseText);
+
+            let responseData;
+            try {
+                responseData = JSON.parse(responseText);
+            } catch {
+                responseData = responseText;
+            }
+
+            if (!response.ok) {
+                throw new Error(`Salesforce API Error (${response.status}): ${JSON.stringify(responseData)}`);
+            }
+
+            console.log("✅ Salesforce API call successful:", responseData);
+            return {
+                statusCode: 200,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                },
+                body: JSON.stringify({
+                    message: "Lead submitted successfully!",
+                    response: responseData,
+                    timestamp: new Date().toISOString()
+                })
+            };
+
+        } catch (fetchError) {
+            clearTimeout(timeoutId);
+            if (fetchError.name === 'AbortError') {
+                throw new Error('Salesforce API request timed out after 15 seconds');
+            }
+            throw new Error(`Salesforce API call failed: ${fetchError.message}`);
+        }
+
+    } catch (error) {
+        console.error("❌ Function error:", error.message);
+        console.error("❌ Error stack:", error.stack);
+
+        return {
+            statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            body: JSON.stringify({
+                message: "Error processing form submission",
+                error: error.message,
+                timestamp: new Date().toISOString()
+            })
+        };
+    }
+};

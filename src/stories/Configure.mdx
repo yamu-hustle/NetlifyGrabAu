@@ -1,0 +1,40 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Home" />
+
+<div className="sb-container">
+  <div className='sb-section-title'>
+    # King Kong Boilerplate
+
+    Welcome! This site contains every section our boilerplate currently supports. <br/>
+    If you can't find your section here, it probably doesn't exist yet.
+  </div>
+
+  <div className="sb-section">
+    <div className="sb-section-item">
+        ### Feature/Section Requests
+
+        If you have any new sections that you want to be included in our boilerplate, please go to the link below and complete the form.
+
+        Depending on the technical complexity, and how frequently the section is included in our designs, we may or may not approve the request.
+
+        <a class="external-link" href="/requests/">Request A New Feature</a>
+    </div>
+  </div>
+</div>
+
+
+<style>{
+`
+.external-link{
+	display:table;
+	padding: 10px 25px;
+	line-height:1;
+	background:#000;
+	color:#FFF;
+	font-size: 14px;
+	font-weight: 700;
+	border: 1px solid #000;
+}
+`}
+</style>

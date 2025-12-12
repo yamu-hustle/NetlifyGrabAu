@@ -1,0 +1,1139 @@
+﻿;(function () {
+	var O,
+		i,
+		x,
+		T,
+		m,
+		o = !1,
+		_ = !1,
+		d = !1,
+		L = !1,
+		S = !1,
+		R = !1,
+		A = 0,
+		N = !1,
+		I = !1,
+		q = Date.now(),
+		w,
+		B,
+		k = setTimeout(function () {}, 1),
+		f = {
+			success: 'Form Submitted Successfully!',
+			spam: 'Recaptcha verification failed. Please try a different browser.',
+			failed: 'Your submission could not be received at this time. <br/>Please give us a call.',
+			recaptcha: 'Please complete the recaptcha.',
+			verifying: 'Verifying reCaptcha...',
+			required: 'Please ensure all required fields have been completed!',
+			requiredfield: 'This field is required!',
+			invalidemail: 'Please enter a valid email address!',
+			invalidphone: 'Please enter a valid phone number!',
+			invalidnumeric: 'This field may only contain numbers!',
+		}
+	document.readyState !== 'loading'
+		? F()
+		: document.addEventListener('DOMContentLoaded', function () {
+				F()
+			}),
+		window.addEventListener('unload', function (e) {
+			h()
+		}),
+		window.addEventListener('beforeunload', function (e) {
+			h()
+		}),
+		window.addEventListener('visibilitychange', function (e) {
+			h()
+		}),
+		window.addEventListener('pagehide', function (e) {
+			h()
+		}),
+		window.addEventListener('message', function (e) {
+			if (
+				!L &&
+				e.data &&
+				e.data.eventName &&
+				e.data.eventName === 'onFormSubmitted'
+			) {
+				if (e.data.id) {
+					const t = document.querySelector('#hsForm_' + e.data.id)
+					t && p(t)
+				}
+				h()
+			}
+		})
+	function h() {
+		var e
+		o &&
+			!(
+				(e = o == null ? void 0 : o.classList) != null &&
+				e.contains('kk-global-only')
+			) &&
+			!L &&
+			d &&
+			!_ &&
+			xe(o) &&
+			((L = !0),
+			b(o),
+			setTimeout(function () {
+				L = !1
+			}, 1e4))
+	}
+	function F() {
+		Q(),
+			ne(),
+			se(),
+			(O = document.querySelectorAll('form')),
+			O.forEach(function (e, t) {
+				C(e, !1)
+			}),
+			be(function (e) {
+				C(e, !1)
+			})
+	}
+	function C(e, t) {
+		re(e) ||
+			(ee(e),
+			oe(e),
+			de(e),
+			K(e),
+			t || te(e),
+			W(e),
+			z(e),
+			J(e),
+			$(e),
+			he(e))
+	}
+	function W(e) {
+		e.addEventListener('submit', function (t) {
+			p(e), S && !R && (M(e) || t.preventDefault())
+		})
+	}
+	var X = XMLHttpRequest.prototype.open
+	XMLHttpRequest.prototype.open = function () {
+		this.addEventListener('load', function () {
+			this.responseType &&
+				this.responseType === 'text' &&
+				this.responseURL &&
+				this.responseText &&
+				o &&
+				G(this.responseText, this.responseURL, o)
+		}),
+			X.apply(this, arguments)
+	}
+	function $(e) {
+		e.classList.contains('wpcf7-form') &&
+			e.parentNode.addEventListener('wpcf7mailsent', function (t) {
+				if (
+					e &&
+					!e.querySelector('[name="redirect"]') &&
+					(b(e), e.querySelector('[name="kkredirect"]'))
+				) {
+					var n = e.querySelector('[name="kkredirect"]').value
+					window.location.href = n
+				}
+			})
+	}
+	function z(e) {
+		if (e.querySelector('.submit-container')) {
+			var t = e.querySelector('.submit-container')
+			t.addEventListener('click', function (r) {
+				r.target.type == 'button' && p(this.closest('.nf-form-cont'))
+			}),
+				t.addEventListener('keydown', function (r) {
+					r.target.type == 'button' &&
+						p(this.closest('.nf-form-cont'))
+				})
+		}
+		if (e.querySelector('input[type="submit"]')) {
+			var n = e.querySelector('input[type="submit"]'),
+				s = n.parentNode
+			s.addEventListener('click', function (r) {
+				r.target.type == 'submit' && p(e)
+			}),
+				s.addEventListener('keydown', function (r) {
+					r.target.type == 'submit' && r.which == 13 && p(e)
+				})
+		}
+		if (
+			e.querySelectorAll('button:not([type="button"]), button.needsclick')
+				.length
+		) {
+			var a = e.querySelectorAll(
+				'button:not([type="button"]), button.needsclick'
+			)
+			a.forEach(function (r, l) {
+				var c = r.parentNode
+				c.addEventListener('click', function (u) {
+					;(u.target.tagName == 'INPUT' ||
+						u.target.tagName == 'BUTTON') &&
+						p(e),
+						u.target.parentNode &&
+							u.target.parentNode.nodeName == 'BUTTON' &&
+							p(e)
+				}),
+					c.addEventListener('keydown', function (u) {
+						u.which == 13 &&
+							(u.target.tagName == 'INPUT' ||
+								u.target.tagName == 'BUTTON') &&
+							p(e)
+					})
+			})
+		}
+	}
+	function p(e) {
+		if (((o = e.cloneNode(!0)), (d = !0), D(e) == 'invisible')) {
+			if (typeof grecaptcha < 'u') {
+				let a = function () {
+					A++
+					var r = ''
+					try {
+						r = H(e)
+					} catch {
+						r = 'error'
+					}
+					A < 250 && r == ''
+						? window.setTimeout(a, 400)
+						: (clearTimeout(k),
+							(k = setTimeout(function () {
+								;(d = !1), (A = 0)
+							}, 3e3)))
+				}
+				var s = a
+				a()
+			}
+		} else {
+			clearTimeout(k)
+			var t = 7e3,
+				n = o.getAttribute('action')
+			n &&
+				((n.indexOf('.php') > -1 && n.indexOf('activehosted') == -1) ||
+					n.indexOf('/.netlify/') > -1) &&
+				(t = 15e3),
+				o.getAttribute('data-timeout') &&
+					(t = parseInt(o.getAttribute('data-timeout'))),
+				(k = setTimeout(function () {
+					d = !1
+				}, t))
+		}
+	}
+	function J(e) {
+		if (!N) {
+			var t = document.getElementsByName(e.getAttribute('target')),
+				n = ''
+			if (
+				(e.hasAttribute('action') && (n = e.getAttribute('action')),
+				!(n.indexOf('facebook.com') > -1) && t.length)
+			) {
+				N = !0
+				var s = new MutationObserver(function (a) {
+					a[0].removedNodes &&
+						a[0].removedNodes[0] &&
+						a[0].removedNodes[0].outerHTML &&
+						(a[0].removedNodes[0].outerHTML.indexOf('<form') > -1 ||
+							a[0].removedNodes[0].outerHTML.indexOf(
+								'type="submit"'
+							) > -1) &&
+						b(o)
+				})
+				s.observe(document.body, { childList: !0, subtree: !0 })
+			}
+		}
+	}
+	function Q() {
+		if (typeof dataLayer < 'u') {
+			var e = document.querySelectorAll('a')
+			e.forEach(function (t, n) {
+				t.addEventListener('click', function (s) {
+					switch (!0) {
+						case t.href.indexOf('tel:') > -1:
+							dataLayer.push({ event: 'gtm.phoneClick' })
+							break
+						case t.href.indexOf('mailto:') > -1:
+							dataLayer.push({ event: 'gtm.emailSent' })
+							break
+					}
+				})
+			})
+		}
+	}
+	function G(e, t, n) {
+		var s = [
+			'/recaptcha',
+			'/emailcheck/',
+			'/pagead/',
+			'google-analytics',
+			'googleapi',
+			'google.com',
+			'googlead',
+			'googlevideo',
+			'instabot',
+			'youtube',
+			'/collect?v',
+			'hotjar',
+			'facebook.com',
+			'wistia',
+			'CheckEmailExists',
+			'crazyegg',
+		]
+		if (t == '') return !1
+		for (var a = 0; a < s.length; a++)
+			if (t && t.indexOf(s[a]) > -1) return !1
+		if (
+			(t.indexOf('stockdoctor') > -1 && e.indexOf('ErrorMessage') > -1) ||
+			e.indexOf('wpcf7') > -1
+		)
+			return !1
+		if (n)
+			try {
+				b(n)
+			} catch (r) {
+				console.log('LL Handling Error'), console.log(r)
+			}
+	}
+	function b(e) {
+		if (!e) return console.log('No Form Found'), !1
+		if (le(e)) return console.log('Failed Spam Check'), !1
+		if (Ae(e)) return console.log('Form is completely empty'), !1
+		;(o = !1), (d = !1), (_ = !1)
+		var t = {},
+			n = ''
+		if (
+			((t.site = window.location.href),
+			(t.form = ie(e)),
+			(t.date = Date.now()),
+			(t.utm = Y()),
+			(t.facebook = Z()),
+			(n = JSON.stringify(t)),
+			ve(t.form),
+			e.classList && e.classList.contains('kk-nosend'))
+		)
+			return console.log('Form Submitted But Skipped'), !1
+		if (
+			(console.log('Sent To Lead Library'),
+			typeof navigator.sendBeacon == 'function')
+		) {
+			var s = new Blob([n], { type: 'text/plain' })
+			navigator.sendBeacon(
+				'https://ep.leadlibrary.kingkong.net.au/leads/create',
+				s
+			)
+		} else {
+			var a = new XMLHttpRequest()
+			a.open(
+				'POST',
+				'https://ep.leadlibrary.kingkong.net.au/leads/create',
+				!1
+			),
+				a.setRequestHeader('Content-Type', 'text/plain'),
+				a.send(n)
+		}
+	}
+	function Y() {
+		var e = {},
+			t = Object.keys(sessionStorage)
+		return (
+			t.forEach((n) => {
+				if (n.includes('utm_')) {
+					var s = n.split('utm_'),
+						a = s[1]
+					e[a] = sessionStorage.getItem(n)
+				}
+				n.includes('clid') && (e[n] = sessionStorage.getItem(n))
+			}),
+			e
+		)
+	}
+	function Z(e) {
+		var t = {}
+		return (t.event_id = q), (t.fbc = w), (t.fbp = B), t
+	}
+	function K(e) {
+		e.getAttribute('target') == '_blank' && e.setAttribute('target', '')
+	}
+	function ee(e) {
+		if (
+			((e.messages = []),
+			(e.messages.success = f.success),
+			(e.messages.spam = f.spam),
+			(e.messages.failed = f.failed),
+			(e.messages.recaptcha = f.recaptcha),
+			(e.messages.verifying = f.verifying),
+			(e.messages.required = f.required),
+			(e.messages.requiredfield = f.requiredfield),
+			(e.messages.invalidemail = f.invalidemail),
+			(e.messages.invalidphone = f.invalidphone),
+			(e.messages.invalidnumeric = f.invalidnumeric),
+			(formMessageDiv = e.querySelector('.form-messages')),
+			formMessageDiv)
+		) {
+			var t = formMessageDiv.getAttribute('data-success'),
+				n = formMessageDiv.getAttribute('data-required'),
+				s = formMessageDiv.getAttribute('data-requiredfield'),
+				a = formMessageDiv.getAttribute('data-invalidemail'),
+				r = formMessageDiv.getAttribute('data-invalidphone')
+			t && (e.messages.success = t),
+				n && (e.messages.required = n),
+				s && (e.messages.requiredfield = s),
+				a && (e.messages.invalidemail = a),
+				r && (e.messages.invalidphone = r),
+				(e.querySelector('.form-messages').innerHTML = '')
+		}
+	}
+	function te(e) {
+		var t = e.getAttribute('action')
+		t && t.indexOf('infusionsoft') > -1 && (fe(e), ye(e) || y(e)),
+			t && t.indexOf('activehosted') > -1 && (e = pe(e)),
+			e.classList &&
+				e.classList.contains('kk-validation') &&
+				(y(e), me(e)),
+			t && t.indexOf('list-manage.com') > -1 && y(e),
+			e.classList && e.classList.contains('frm-show-form') && y(e),
+			typeof Shopify < 'u' && y(e)
+	}
+	function ne() {
+		for (
+			var e = window.location.search.substr(1).split('&'), t = 0;
+			t < e.length;
+			t++
+		) {
+			var n = e[t].split('=')
+			;(n[0].includes('utm_') || n[0].includes('clid')) &&
+				sessionStorage.setItem(n[0], n[1])
+		}
+	}
+	function se() {
+		;(w = V('_fbc')),
+			(B = V('_fbp')),
+			typeof dataLayer < 'u' &&
+				(dataLayer.push({ conversions_event_id: q }),
+				dataLayer.push({ conversions_fbc: w }),
+				dataLayer.push({ conversions_fbp: w }))
+	}
+	function ae() {
+		;(q = Date.now()),
+			typeof dataLayer < 'u' &&
+				dataLayer.push({ conversions_event_id: q })
+	}
+	function ie(e) {
+		var t = {}
+		if (
+			((t.url = window.location.host + window.location.pathname),
+			e.classList && e.classList.contains('nf-form-cont'))
+		) {
+			var n = e.id
+			;(e = e.querySelector('form')), (e.id = n)
+		}
+		e.attributes.id && (t.id = e.attributes.id.value),
+			e.attributes.class && (t.classes = e.attributes.class.value),
+			(t.fields = {})
+		for (var s = 0; s < e.elements.length; s++)
+			if (e.elements[s].attributes.name) {
+				var a = ''
+				if (
+					(e.elements[s].attributes.name.value
+						? (a = e.elements[s].attributes.name.value)
+						: e.elements[s].attributes.placeholder.value
+							? (a = e.elements[s].attributes.placeholder.value)
+							: e.elements[s].attributes.id.value &&
+								(a = e.elements[s].attributes.id.value),
+					ce(e.elements[s]) &&
+						!e.elements[s].classList.contains('kk-allow'))
+				) {
+					console.log('LL - Banned Field - ' + a)
+					continue
+				}
+				var r = '',
+					l = ''
+				let c = e.elements[s].closest('step-item')
+				c || (c = e.elements[s].closest('fieldset')),
+					c && (l = c.querySelector('h2,h3,h4')),
+					e.elements[s].attributes && e.elements[s].attributes.type
+						? (t.fields[a] ||
+								((t.fields[a] = {}),
+								(t.fields[a].type =
+									e.elements[s].attributes.type.value)),
+							e.elements[s].id &&
+								(r = e.querySelector(
+									'label[for="' + e.elements[s].id + '"]'
+								)),
+							e.elements[s].attributes.name &&
+							e.elements[s].attributes.name.value
+								? (t.fields[a].name =
+										e.elements[s].attributes.name.value)
+								: e.elements[s].attributes.placeholder &&
+									  e.elements[s].attributes.placeholder.value
+									? (t.fields[a].name =
+											e.elements[
+												s
+											].attributes.placeholder.value)
+									: e.elements[s].attributes.id &&
+										e.elements[s].attributes.id.value &&
+										(t.fields[a].name =
+											e.elements[s].attributes.id.value),
+							e.elements[s].nodeName == 'SELECT' &&
+								(t.fields[a].type = 'select'),
+							e.elements[s].value &&
+								(t.fields[a].type == 'checkbox' ||
+								t.fields[a].type == 'radio'
+									? e.elements[s].checked &&
+										(t.fields[a].value
+											? (t.fields[a].value +=
+													', ' + e.elements[s].value)
+											: (t.fields[a].value =
+													e.elements[s].value),
+										r &&
+											r.textContent &&
+											(t.fields[a].label = r.textContent),
+										l &&
+											l.textContent &&
+											(t.fields[a].heading =
+												l.textContent))
+									: ((t.fields[a].value =
+											e.elements[s].value),
+										r &&
+											r.textContent &&
+											(t.fields[a].label = r.textContent),
+										e.elements[s].placeholder &&
+											(t.fields[a].placeholder =
+												e.elements[s].placeholder),
+										l &&
+											l.textContent &&
+											(t.fields[a].heading =
+												l.textContent))))
+						: e.elements[s].attributes &&
+							!e.elements[s].attributes.type &&
+							((t.fields[a] = {}),
+							(t.fields[a].type = 'unknown'),
+							e.elements[s].nodeName == 'SELECT' &&
+								(t.fields[a].type = 'select'),
+							e.elements[s].attributes.name &&
+								(t.fields[a].name =
+									e.elements[s].attributes.name.value),
+							e.elements[s].value &&
+								(t.fields[a].value = e.elements[s].value),
+							e.elements[s].placeholder &&
+								(t.fields[a].placeholder =
+									e.elements[s].placeholder),
+							l &&
+								l.textContent &&
+								(t.fields[a].heading = l.textContent))
+			}
+		return t
+	}
+	function re(e) {
+		if (e.classList && e.classList.contains('kk-validation')) return !1
+		var t = ue(e)
+		return t !== !1
+			? (console.log('LL - Banned Form - ' + t), !0)
+			: !!(e.classList && e.classList.contains('skip-lead-library'))
+	}
+	function le(e) {
+		var t = !1
+		return (
+			e.querySelector('input[name="planet"]') &&
+				e.querySelector('input[name="planet"]').value !== '' &&
+				(console.log('LL - Failed Honeypot'), (t = !0)),
+			M(e) || (console.log('LL - Failed Recaptcha'), (t = !0)),
+			!!t
+		)
+	}
+	function ce(e, t) {
+		var r
+		const n = [
+			'card',
+			'credit',
+			'cardholder',
+			'cvv',
+			'cvc',
+			'ssn',
+			'tfn',
+			'nino',
+			'billing',
+			'payment',
+			'routing',
+			'iban',
+			'debit',
+			'password',
+			'pass',
+			'bsb',
+			'bank',
+			'account',
+		]
+		if (
+			(r = e == null ? void 0 : e.classList) != null &&
+			r.contains('kk-forceinclude')
+		)
+			return !1
+		const s = e.outerHTML.toLowerCase(),
+			a = ['bsb', 'cvv', 'cvc']
+		for (const l of n) {
+			const c = s.indexOf(l)
+			if (c > -1) {
+				if (a.includes(l) && c >= 3 && s.substring(c - 3, c) === 'tw-')
+					continue
+				return !0
+			}
+		}
+		return !!(e.value && e.value === '~|')
+	}
+	function ue(e) {
+		var a
+		const t = [
+			'credit card',
+			'card number',
+			'cardholder',
+			'cvv',
+			'cvc',
+			'ssn',
+			'tfn',
+			'nino',
+			'billing',
+			'payment',
+			'iban',
+			'debit',
+			'sign in',
+			'log in',
+			'login',
+			'action="/cart',
+			'/cart/add',
+			'customer_login',
+			'create_customer',
+			'cartform',
+			'shopify-challenge__button',
+		]
+		if (
+			(a = e == null ? void 0 : e.classList) != null &&
+			a.contains('kk-allow')
+		)
+			return !1
+		const n = e.outerHTML.toLowerCase(),
+			s = ['bsb', 'cvv', 'cvc', 'tfn', 'ssn']
+		for (let r = 0; r < t.length; r++) {
+			const l = t[r],
+				c = n.indexOf(l)
+			if (c > -1) {
+				if (s.includes(l) && c >= 3 && n.substring(c - 3, c) === 'tw-')
+					continue
+				return l
+			}
+		}
+		return !1
+	}
+	function oe(e) {
+		var t = e.querySelectorAll('select')
+		t.forEach(function (n, s) {
+			n.addEventListener('change', function () {
+				for (var a = 0; a < this.options.length; a++)
+					this.options[a].removeAttribute('selected')
+				this.options[this.selectedIndex].setAttribute('selected', '')
+			})
+		})
+	}
+	function de(e) {
+		if (
+			!(e.classList && e.classList.contains('disable-honeypot')) &&
+			typeof e.querySelector == 'function' &&
+			!e.querySelector('input[name="planet"]')
+		) {
+			var t = document.createElement('INPUT')
+			t.setAttribute('type', 'text'),
+				t.setAttribute('name', 'planet'),
+				t.setAttribute(
+					'style',
+					'position: absolute !important; pointer-events:none !important; visibility: hidden !important; width:0 !important; left:0 !important;'
+				),
+				e.appendChild(t)
+		}
+	}
+	function M(e) {
+		var t = D(e)
+		return t
+			? (S && t == 'invisible' && grecaptcha.execute(), H(e) != '')
+			: !0
+	}
+	function H(e) {
+		if (typeof grecaptcha > 'u') return ''
+		try {
+			return e.querySelector('[name="_wpcf7_recaptcha_response"]')
+				? e.querySelector('[name="_wpcf7_recaptcha_response"]').value
+				: e.classList.contains('wpcf7-form') &&
+					  e.querySelector('[name="g-recaptcha-response"]')
+					? e.querySelector('[name="g-recaptcha-response"]').value
+					: typeof grecaptcha < 'u' &&
+						  typeof grecaptcha.getResponse < 'u' &&
+						  grecaptcha.getResponse() !== ''
+						? grecaptcha.getResponse()
+						: e.querySelector('[name*="recaptcha"]')
+							? e.querySelector('[name*="recaptcha"]').value
+							: ''
+		} catch {
+			return ''
+		}
+	}
+	function D(e) {
+		return e.classList.contains('kk-recaptcha') ||
+			e.classList.contains('hs-form') ||
+			e.classList.contains('wpcf7-form') ||
+			e.outerHTML.indexOf('captcha') == -1 ||
+			e.outerHTML.indexOf('window.Shopify.recaptcha') > -1
+			? !1
+			: typeof grecaptcha < 'u'
+				? document.querySelector('.grecaptcha-badge')
+					? 'invisible'
+					: 'inline'
+				: !1
+	}
+	function fe(e) {
+		if (typeof onloadInfusionRecaptchaCallback == 'function') {
+			var t = onloadInfusionRecaptchaCallback.toString(),
+				n = ''
+			typeof t < 'u' &&
+				t.length &&
+				(n = t.match(/(sitekey):"((\\"|[^"])*)"/)),
+				typeof n < 'u' &&
+					n != null &&
+					n.length &&
+					((n = n[0]),
+					(n = n.replaceAll('"', '')),
+					(n = n.replaceAll('sitekey:', '')),
+					(window.onloadInfusionRecaptchaCallback = function () {
+						var s = document.querySelectorAll('.infusion-recaptcha')
+						;[].forEach.call(s, function (a) {
+							if (a.id) {
+								var r = document.createElement('div')
+								;(r.id = a.id),
+									a.parentNode.insertBefore(r, a),
+									a.removeAttribute('id'),
+									grecaptcha.render(r.id, {
+										sitekey: n,
+										size: 'invisible',
+										callback: function () {
+											b(o), E(e)
+										},
+									})
+							}
+						})
+					}),
+					(S = !0))
+		}
+	}
+	function pe(e) {
+		if (typeof window._show_thank_you != 'function') return e
+		var t = document.createElement('div')
+		t.innerHTML = e.outerHTML
+		var n = t.querySelector('form')
+		return e.replaceWith(n), C(n, !0), n
+	}
+	function ve(e) {
+		var t = ge(e.fields)
+		typeof dataLayer < 'u'
+			? dataLayer.push({
+					event: 'gtm.formSubmission',
+					form: e,
+					kkaw: t,
+					eventCallback: function () {
+						setTimeout(function () {
+							ae()
+						}, 3e3)
+					},
+				})
+			: console.log('LL - dataLayer is undefined')
+	}
+	function ge(e) {
+		var t = {
+			email: '',
+			phone_number: '',
+			address: {
+				first_name: '',
+				last_name: '',
+				street: '',
+				city: '',
+				region: '',
+				postal_code: '',
+				country: '',
+			},
+		}
+		for (var [n, s] of Object.entries(e))
+			n.toLowerCase().indexOf('email') > -1 && (t.email = s.value),
+				s.type && s.type === 'email' && (t.email = s.value),
+				(n.toLowerCase().indexOf('phone') > -1 ||
+					n.toLowerCase().indexOf('mobile') > -1) &&
+					(t.phone_number = s.value),
+				s.type && s.type === 'tel' && (t.phone_number = s.value)
+		return t
+	}
+	function he(e) {
+		e.classList &&
+			(e.classList.contains('kk-global') ||
+				e.classList.contains('kk-global-only')) &&
+			(window._sendToLeadLibrary = b)
+	}
+	function be(e) {
+		var t = function (l) {
+				l.forEach(function (c) {
+					if (c.addedNodes.length)
+						for (var u = c.addedNodes, v = 0; v < u.length; v++)
+							u[v].tagName == 'FORM'
+								? e(u[v])
+								: u[v].outerHTML &&
+									u[v].outerHTML.indexOf('<form') > -1 &&
+									u[v].childNodes &&
+									u[v].childNodes.forEach(function (U, Ce) {
+										U.tagName == 'FORM' && e(U)
+									})
+				})
+			},
+			n = document.querySelector('body'),
+			s = { childList: !0, subtree: !0 },
+			a = window.MutationObserver || window.WebKitMutationObserver,
+			r = new a(t)
+		r.observe(n, s)
+	}
+	function ye(e) {
+		for (var t = 0; t < e.elements.length; t++)
+			if (
+				((i = e.elements[t]),
+				!(i.attributes.type && i.attributes.type.value == 'hidden') &&
+					i.attributes.required)
+			)
+				return !0
+		return !1
+	}
+	function y(e) {
+		for (var t = 0; t < e.elements.length; t++)
+			(i = e.elements[t]),
+				!(
+					i.attributes.type &&
+					(i.attributes.type.value == 'hidden' ||
+						i.attributes.type.value == 'submit')
+				) &&
+					(((i.placeholder && i.placeholder.indexOf('*') > -1) ||
+						(i.closest('.infusion-field') &&
+							i
+								.closest('.infusion-field')
+								.querySelector('label')
+								.textContent.indexOf('*') > -1) ||
+						(e.classList && i.classList.contains('required')) ||
+						i.getAttribute('aria-required') == 'true') &&
+						(i.required = !0),
+					i.attributes.name &&
+						i.attributes.name.value == 'inf_field_Email' &&
+						(i.attributes.type.value = 'email'))
+	}
+	function me(e) {
+		;(R = !0),
+			e.attributes.novalidate || e.setAttribute('novalidate', !0),
+			e.querySelector('.form-messages') ||
+				((formMessageDiv = document.createElement('div')),
+				formMessageDiv.classList.add('form-messages'),
+				e.appendChild(formMessageDiv)),
+			e.classList.contains('kk-recaptcha')
+				? Le(e)
+				: e.addEventListener('submit', function (t) {
+						t.preventDefault()
+						let n = e.querySelector('[type="submit"]')
+						n && n.setAttribute('disabled', !0),
+							P(e) && !S
+								? E(e)
+								: n && n.removeAttribute('disabled')
+					})
+	}
+	function E(e) {
+		;(d = !0), h(), e.submit()
+	}
+	function Le(e) {
+		if (!I) {
+			if (
+				((m = document.querySelector(
+					'script[src*="scripts.kingkong.net.au/tracker.min.js"]'
+				)),
+				!m.getAttribute('data-recaptcha'))
+			) {
+				console.error('LL - Recaptcha Enabled But No API Key Found!')
+				return
+			}
+			T = m.getAttribute('data-recaptcha')
+			var t = document.createElement('script')
+			;(t.src = 'https://www.google.com/recaptcha/api.js?render=' + T),
+				m.insertAdjacentElement('beforebegin', t),
+				(I = !0)
+		}
+		e.addEventListener('submit', function (n) {
+			n.preventDefault(), P(e) && Se(e)
+		})
+	}
+	function Se(e) {
+		grecaptcha.ready(function () {
+			grecaptcha.execute(T, { action: 'submit' }).then(function (t) {
+				e.querySelector('.form-messages').innerHTML =
+					e.messages.verifying
+				var n = {}
+				;(n.site = window.location.href), (n.token = t)
+				var s = new XMLHttpRequest()
+				s.open(
+					'POST',
+					'https://ep.leadlibrary.kingkong.net.au/recaptcha',
+					!0
+				),
+					s.setRequestHeader('Content-type', 'text/plain'),
+					s.send(JSON.stringify(n)),
+					(s.onload = function () {
+						s.readyState === s.DONE &&
+							s.status === 200 &&
+							s.responseText &&
+							(s.responseText == 'valid' &&
+								(E(e),
+								(e.querySelector('.form-messages').innerHTML =
+									e.messages.success)),
+							s.responseText == 'spam' &&
+								(e
+									.querySelector('.form-messages')
+									.classList.remove('success'),
+								e
+									.querySelector('.form-messages')
+									.classList.add('error'),
+								(e.querySelector('.form-messages').innerHTML =
+									e.messages.spam)),
+							s.responseText == 'missingsecret' &&
+								(e
+									.querySelector('.form-messages')
+									.classList.remove('success'),
+								e
+									.querySelector('.form-messages')
+									.classList.add('error'),
+								(e.querySelector('.form-messages').innerHTML =
+									e.messages.failed),
+								console.error(
+									'Lead Library Error - reCaptcha Requires A Secret Key To Verify'
+								)),
+							s.responseText == 'failed' &&
+								(e
+									.querySelector('.form-messages')
+									.classList.remove('success'),
+								e
+									.querySelector('.form-messages')
+									.classList.add('error'),
+								(e.querySelector('.form-messages').innerHTML =
+									e.messages.failed)))
+					}),
+					(s.onerror = function () {
+						E(e),
+							(e.querySelector('.form-messages').innerHTML =
+								e.messages.success)
+					})
+			})
+		})
+	}
+	function qe(e) {
+		Te()
+		for (var t = 0; t < e.elements.length; t++)
+			if (
+				((i = e.elements[t]),
+				!(typeof i.type > 'u') &&
+					!(i.type == 'hidden' || i.type == 'submit'))
+			) {
+				if (i.attributes.required && i.value == '')
+					g(i, e.messages.requiredfield)
+				else if (i.attributes.required && i.nodeName == 'SELECT')
+					(i[i.selectedIndex].getAttribute('value') == null ||
+						i[i.selectedIndex].getAttribute('value') == '') &&
+						g(i, e.messages.requiredfield)
+				else if (i.attributes.required && i.type == 'email')
+					j(i) || g(i, e.messages.invalidemail)
+				else if (i.classList && i.classList.contains('kk-numeric'))
+					ke(i) || g(i, e.messages.invalidnumeric)
+				else if (i.attributes.required && i.type == 'tel')
+					Ee(i) || g(i, e.messages.invalidphone)
+				else if (
+					i.attributes.required &&
+					(i.type == 'radio' || i.type == 'checkbox') &&
+					!we(i)
+				) {
+					var n = document.querySelector(
+						'label[for="' + i.getAttribute('id') + '"]'
+					)
+					n ||
+						(n = document.querySelector(
+							'label[for="' + i.getAttribute('name') + '"]'
+						)),
+						n ||
+							(i.parentNode &&
+								i.parentNode.nodeName === 'LABEL' &&
+								(n = i.parentNode)),
+						g(n || !1, e.messages.requiredfield)
+				}
+			}
+		return x
+	}
+	function we(e) {
+		if (!e.attributes.name) return !0
+		var t = document.querySelectorAll(
+				'[name="' + e.getAttribute('name') + '"]'
+			),
+			n = !1
+		return (
+			t.forEach(function (s, a) {
+				s.checked && (n = !0)
+			}),
+			n
+		)
+	}
+	function ke(e) {
+		var t = e.value
+		return /^\d*$/.test(t)
+	}
+	function P(e) {
+		return qe(e)
+			? (e.querySelector('.form-messages').classList.remove('error'),
+				e.querySelector('.form-messages').classList.add('success'),
+				e.classList.contains('kk-recaptcha')
+					? ((e.querySelector('.form-messages').innerHTML = ''),
+						(d = !1),
+						!0)
+					: M(e)
+						? ((e.querySelector('.form-messages').innerHTML =
+								e.messages.success),
+							(d = !0),
+							!0)
+						: ((d = !1),
+							e
+								.querySelector('.form-messages')
+								.classList.remove('success'),
+							e
+								.querySelector('.form-messages')
+								.classList.add('error'),
+							!1))
+			: ((d = !1),
+				e.querySelector('.form-messages').classList.remove('success'),
+				e.querySelector('.form-messages').classList.add('error'),
+				(e.querySelector('.form-messages').innerHTML =
+					e.messages.required),
+				!1)
+	}
+	function j(e) {
+		if (e.classList.contains('kk-novalidate')) return !0
+		var t = /^\w+([\.-]?[\w\+]+)*@\w+([\.-]?\w+)*(\.\w{2,24})+$/,
+			n = e.value
+		return !!n.match(t)
+	}
+	function Ee(e) {
+		if (
+			e.dataset.intlid &&
+			typeof itiFields == 'object' &&
+			typeof itiFields[e.dataset.intlid] == 'object'
+		)
+			return itiFields[e.dataset.intlid].isValidNumber()
+		var t = e.value
+		return typeof window._kkValidatePhone == 'function'
+			? window._kkValidatePhone(t)
+			: /^[0-9\(\)+-\s]{6,}$/.test(t)
+	}
+	function xe(e) {
+		if (
+			e.id &&
+			e.id.indexOf('gform') > -1 &&
+			!e.querySelector('[gform_ajax_frame]')
+		)
+			for (var t = 0; t < e.elements.length; t++) {
+				var n = e.elements[t]
+				if (
+					(n.getAttribute('aria-required') == 'true' &&
+						n.value == '') ||
+					(n.parentNode.classList.contains(
+						'ginput_container_email'
+					) &&
+						(n.value ||
+							n.getAttribute('aria-required') == 'true') &&
+						!j(n))
+				)
+					return !1
+			}
+		return !0
+	}
+	function g(e, t) {
+		x = !1
+		var n = !1
+		if (
+			(e.nextSibling &&
+				e.nextSibling.classList &&
+				e.nextSibling.classList.contains('field-error') &&
+				(n = !0),
+			e && !n)
+		) {
+			var s = document.createElement('div')
+			s.classList.add('field-error'),
+				(s.innerHTML = t),
+				e.parentNode && e.parentNode.classList.contains('iti')
+					? e.parentNode.insertAdjacentElement('afterend', s)
+					: e.insertAdjacentElement('afterend', s),
+				e.classList.add('errored-field')
+		}
+	}
+	function Te() {
+		;(x = !0),
+			document.querySelectorAll('.field-error').forEach(function (e, t) {
+				e.remove()
+			}),
+			document
+				.querySelectorAll('.errored-field')
+				.forEach(function (e, t) {
+					e.classList.remove('errored-field')
+				})
+	}
+	function Ae(e) {
+		for (var t = 0; t < e.elements.length; t++) {
+			var n = e.elements[t]
+			if (!(n.type === 'hidden' || n.type === 'submit')) {
+				if (n.type === 'radio' || n.type === 'checkbox') {
+					if (n.checked) return !1
+				} else if (n.nodeName === 'SELECT') {
+					var s = n.options[n.selectedIndex]
+					if (s && s.value && s.value.trim() !== '') return !1
+				} else if (n.value && n.value.trim() !== '') return !1
+			}
+		}
+		return !0
+	}
+	function V(e) {
+		for (
+			var t = e + '=', n = document.cookie.split(';'), s = 0;
+			s < n.length;
+			s++
+		) {
+			for (var a = n[s]; a.charAt(0) == ' '; )
+				a = a.substring(1, a.length)
+			if (a.indexOf(t) == 0) return a.substring(t.length, a.length)
+		}
+		return ''
+	}
+	Element.prototype.matches ||
+		(Element.prototype.matches =
+			Element.prototype.msMatchesSelector ||
+			Element.prototype.webkitMatchesSelector),
+		Element.prototype.closest ||
+			(Element.prototype.closest = function (e) {
+				var t = this
+				do {
+					if (Element.prototype.matches.call(t, e)) return t
+					t = t.parentElement || t.parentNode
+				} while (t !== null && t.nodeType === 1)
+				return null
+			}),
+		'remove' in Element.prototype ||
+			(Element.prototype.remove = function () {
+				this.parentNode && this.parentNode.removeChild(this)
+			}),
+		'NodeList' in window &&
+			!NodeList.prototype.forEach &&
+			(NodeList.prototype.forEach = function (e, t) {
+				t = t || window
+				for (var n = 0; n < this.length; n++)
+					e.call(t, this[n], n, this)
+			}),
+		String.prototype.replaceAll ||
+			(String.prototype.replaceAll = function (e, t) {
+				return Object.prototype.toString.call(e).toLowerCase() ===
+					'[object regexp]'
+					? this.replace(e, t)
+					: this.replace(new RegExp(e, 'g'), t)
+			})
+})()
