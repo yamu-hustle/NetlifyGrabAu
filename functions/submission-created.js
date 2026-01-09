@@ -81,7 +81,7 @@ export const handler = async (event) => {
             "State": data.state || "",
             "Comments or Questions": data.comment_or_question || "",
             "Preferred Time to Call": data.time || "",
-            "Lead Source": data.leadSource || "Assure AU Hustle Ads"
+            "Lead Source": data.leadSource || "AssureAUCampaign59"
         };
 
         if (data.gclid && data.gclid !== '') {
