@@ -9,7 +9,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
  */
 export async function uploadSubmissionToS3(submissionData) {
     const bucket = process.env.S3_BUCKET_NAME;
-    const region = process.env.AWS_REGION || "ap-southeast-2";
+    const region = process.env.ASSURE_AWS_REGION || "ap-southeast-2";
 
     if (!bucket || !process.env.ASSURE_AWS_ACCESS_KEY_ID || !process.env.ASSURE_AWS_SECRET_ACCESS_KEY) {
         console.log("📦 S3 upload skipped: S3_BUCKET_NAME, ASSURE_AWS_ACCESS_KEY_ID, or ASSURE_AWS_SECRET_ACCESS_KEY not set");
@@ -17,7 +17,11 @@ export async function uploadSubmissionToS3(submissionData) {
     }
 
     try {
-        const client = new S3Client({ region });
+        const endpoint = process.env.S3_ENDPOINT || undefined;
+        const client = new S3Client({
+            region,
+            ...(endpoint && { endpoint }),
+        });
         const now = new Date();
         const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
         const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;

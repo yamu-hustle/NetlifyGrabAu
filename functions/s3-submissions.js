@@ -48,7 +48,7 @@ export const handler = async (event) => {
     }
 
     const bucket = process.env.S3_BUCKET_NAME;
-    const region = process.env.AWS_REGION || "ap-southeast-2";
+    const region = process.env.ASSURE_AWS_REGION || "ap-southeast-2";
 
     if (!bucket || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
         return {
@@ -62,7 +62,11 @@ export const handler = async (event) => {
     }
 
     try {
-        const client = new S3Client({ region });
+        const endpoint = process.env.S3_ENDPOINT || undefined;
+        const client = new S3Client({
+            region,
+            ...(endpoint && { endpoint }),
+        });
         const prefix = "FormSubmissions/";
         const maxKeys = parseInt(event.queryStringParameters?.limit || "100", 10) || 100;
 
