@@ -114,6 +114,24 @@ This setup been used to create dummy T&Cs and Privacy Policies on the homepage.
 Please see the readme for the @kingkongdevs/vite-plugin-html-includes package for more information on how these features work, and you can see an example on the `/sections/` page (unfortunately Storybook won't render these components at present).
 
 
+### Form Handler & S3 Backup
+
+Form submissions are processed by `/.netlify/functions/form-handler`, which sends leads to Salesforce and optionally backs up every submission to an S3 bucket.
+
+**To enable S3 backup**, set these environment variables in Netlify (Site settings → Environment variables):
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `S3_BUCKET_NAME` | Yes | Your AWS S3 bucket name |
+| `AWS_ACCESS_KEY_ID` | Yes | IAM user access key with `s3:PutObject` permission |
+| `AWS_SECRET_ACCESS_KEY` | Yes | IAM user secret key |
+| `AWS_REGION` | No | AWS region (defaults to `ap-southeast-2`) |
+| `SUBMISSIONS_PASSWORD` | Yes (for submissions page) | Password for `/submissions-login/` and listing submissions; set in Netlify (and in `.env` for local dev). |
+
+Submissions are stored as JSON files under `FormSubmissions/YYYY/MM/` in your bucket. Each file is named `YYYY-MM-DD_FirstName_shortId.json` for easy lookup (e.g. `2025-02-02_John_abc123.json`). If S3 credentials are not set, the backup is skipped and the form still works normally.
+
+**Submissions admin page** (`/submissions/`): View all backed-up submissions. Uses a login blocker (similar to TotalProtectAssure): unauthenticated users are redirected to `/submissions-login/` to enter the password. Set `SUBMISSIONS_PASSWORD` in Netlify; sessions last 24 hours. Use "Log out" on shared devices.
+
 ### Form Validation
 
 Add the class `kk-validation` to the form, and un-comment/add the lead library script to the bottom of the page `https://scripts.kingkong.net.au/tracker.min.js`.

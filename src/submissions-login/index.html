@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/x-icon" href="/favicon.png">
+    <title>Submissions – Password Required</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🔒 Form Submissions</h1>
+            <p>Please enter the password to view submissions</p>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password"
+                    placeholder="Enter password">
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span id="btnText">Access Submissions</span>
+            </button>
+        </form>
+
+        <a href="/" class="back-link">← Back to site</a>
+    </div>
+
+    <script>
+        const STORAGE_KEY = "submissionsAuth";
+
+        const authData = localStorage.getItem(STORAGE_KEY);
+        if (authData) {
+            try {
+                const { token, expires } = JSON.parse(authData);
+                if (token && expires && Date.now() < expires) {
+                    const intendedPath = sessionStorage.getItem("submissionsIntendedPath") || "/submissions/";
+                    sessionStorage.removeItem("submissionsIntendedPath");
+                    window.location.href = intendedPath;
+                }
+            } catch (e) {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+
+        const form = document.getElementById("loginForm");
+        const passwordInput = document.getElementById("password");
+        const submitBtn = document.getElementById("submitBtn");
+        const btnText = document.getElementById("btnText");
+        const errorMessage = document.getElementById("errorMessage");
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add("show");
+            setTimeout(() => errorMessage.classList.remove("show"), 5000);
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const password = passwordInput.value;
+
+            if (!password) {
+                showError("Please enter a password");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            btnText.innerHTML = "Verifying<span class=\"loading\"></span>";
+
+            try {
+                const response = await fetch("/.netlify/functions/verify-submissions-password", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const authData = {
+                        token: data.token,
+                        expires: Date.now() + data.expiresIn,
+                        password: password,
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+
+                    const intendedPath = sessionStorage.getItem("submissionsIntendedPath") || "/submissions/";
+                    sessionStorage.removeItem("submissionsIntendedPath");
+                    window.location.href = intendedPath;
+                } else {
+                    showError(data.error || "Invalid password");
+                    submitBtn.disabled = false;
+                    btnText.textContent = "Access Submissions";
+                    passwordInput.value = "";
+                    passwordInput.focus();
+                }
+            } catch (error) {
+                console.error("Login error:", error);
+                showError("An error occurred. Please try again.");
+                submitBtn.disabled = false;
+                btnText.textContent = "Access Submissions";
+            }
+        });
+    </script>
+</body>
+
+</html>
