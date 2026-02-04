@@ -1,3 +1,5 @@
+import { uploadSubmissionToS3 } from "./lib/s3-upload.js";
+
 export const handler = async (event) => {
     console.log("🚀 Function triggered with method:", event.httpMethod);
     console.log("📝 Event body:", event.body);
@@ -90,23 +92,33 @@ export const handler = async (event) => {
 
         console.log("🚀 Payload for Salesforce:", payload);
 
-        // Always call Salesforce API (debug mode removed)
+        // Upload to S3 for backup (runs in parallel, fails silently if not configured)
+        const submissionForS3 = {
+            receivedAt: new Date().toISOString(),
+            payload,
+            rawData: data,
+        };
+        const s3UploadPromise = uploadSubmissionToS3(submissionForS3);
 
         // Call Salesforce API with timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
         try {
+            // Run S3 upload and Salesforce in parallel
             console.log("🌐 Calling Salesforce API...");
-            const response = await fetch("https://business-ruby-13192.my.salesforce-sites.com/services/apexrest/CreateLeadAssure", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "User-Agent": "Netlify-Function/1.0"
-                },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
+            const [, response] = await Promise.all([
+                s3UploadPromise,
+                fetch("https://business-ruby-13192.my.salesforce-sites.com/services/apexrest/CreateLeadAssure", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "User-Agent": "Netlify-Function/1.0"
+                    },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                })
+            ]);
 
             clearTimeout(timeoutId);
 

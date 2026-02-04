@@ -156,6 +156,23 @@
   to = "/thank-you/index.html"
   status = 200
 
+# Submissions admin page
+[[redirects]]
+  from = "/submissions/"
+  to = "/submissions/index.html"
+  status = 200
+
+# Submissions login page
+[[redirects]]
+  from = "/submissions-login/"
+  to = "/submissions-login/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/submissions-login"
+  to = "/submissions-login/"
+  status = 302
+
 # Handle SPA routing - redirect all other routes to index.html
 [[redirects]]
   from = "/*"
