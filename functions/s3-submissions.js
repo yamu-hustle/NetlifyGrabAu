@@ -48,15 +48,23 @@ export const handler = async (event) => {
     }
 
     const bucket = process.env.S3_BUCKET_NAME;
-    const region = process.env.ASSURE_AWS_REGION || "ap-southeast-2";
 
-    if (!bucket || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    // Prefer standard AWS env vars, but allow legacy ASSURE_* names.
+    const region =
+        process.env.ASSURE_AWS_REGION || "ap-southeast-2";
+    const accessKeyId =
+        process.env.ASSURE_AWS_ACCESS_KEY_ID;
+    const secretAccessKey =
+        process.env.ASSURE_AWS_SECRET_ACCESS_KEY;
+
+    if (!bucket || !accessKeyId || !secretAccessKey) {
         return {
             statusCode: 500,
             headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({
                 error: "S3 not configured",
-                message: "S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY must be set",
+                message:
+                    "S3_BUCKET_NAME and AWS credentials must be set (ASSURE_AWS_ACCESS_KEY_ID/ASSURE_AWS_SECRET_ACCESS_KEY)",
             }),
         };
     }
@@ -66,6 +74,7 @@ export const handler = async (event) => {
         const client = new S3Client({
             region,
             ...(endpoint && { endpoint }),
+            credentials: { accessKeyId, secretAccessKey },
         });
         const prefix = "FormSubmissions/";
         const maxKeys = parseInt(event.queryStringParameters?.limit || "100", 10) || 100;
