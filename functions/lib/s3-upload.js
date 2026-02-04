@@ -14,21 +14,21 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 export async function uploadSubmissionToS3(submissionData) {
     const bucket = process.env.S3_BUCKET_NAME;
 
-    // Prefer standard AWS env vars, but allow legacy ASSURE_* names.
+    // Prefer ASSURE_* env vars (explicit project convention), then fall back to standard AWS vars.
     const region =
-        process.env.AWS_REGION || process.env.ASSURE_AWS_REGION || "ap-southeast-2";
+        process.env.ASSURE_AWS_REGION || process.env.AWS_REGION || "ap-southeast-2";
     const accessKeyId =
-        process.env.AWS_ACCESS_KEY_ID || process.env.ASSURE_AWS_ACCESS_KEY_ID;
+        process.env.ASSURE_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
     const secretAccessKey =
-        process.env.AWS_SECRET_ACCESS_KEY || process.env.ASSURE_AWS_SECRET_ACCESS_KEY;
+        process.env.ASSURE_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
 
     const missing = [
         !bucket ? "S3_BUCKET_NAME" : null,
         !accessKeyId
-            ? "AWS_ACCESS_KEY_ID (or ASSURE_AWS_ACCESS_KEY_ID)"
+            ? "ASSURE_AWS_ACCESS_KEY_ID (or AWS_ACCESS_KEY_ID)"
             : null,
         !secretAccessKey
-            ? "AWS_SECRET_ACCESS_KEY (or ASSURE_AWS_SECRET_ACCESS_KEY)"
+            ? "ASSURE_AWS_SECRET_ACCESS_KEY (or AWS_SECRET_ACCESS_KEY)"
             : null,
     ].filter(Boolean);
 
@@ -37,12 +37,12 @@ export async function uploadSubmissionToS3(submissionData) {
         return { status: "skipped", reason: "missing_env", missing };
     }
 
-    try {
-        const endpoint = process.env.S3_ENDPOINT || undefined;
+    const endpoint = process.env.S3_ENDPOINT || undefined;
+
+    async function attemptUpload(attemptRegion) {
         const client = new S3Client({
-            region,
+            region: attemptRegion,
             ...(endpoint && { endpoint }),
-            // Ensure we work even if credentials are provided via ASSURE_* env vars.
             credentials: { accessKeyId, secretAccessKey },
         });
         const now = new Date();
@@ -67,7 +67,35 @@ export async function uploadSubmissionToS3(submissionData) {
         );
         console.log("✅ Submission uploaded to S3:", key);
         return { status: "uploaded", key };
+    }
+
+    try {
+        return await attemptUpload(region);
     } catch (err) {
+        // If we hit the wrong regional endpoint, S3 often replies with a redirect and includes the correct region.
+        // We'll retry once with the hinted region if present.
+        const hintedRegion =
+            err?.BucketRegion ||
+            err?.$response?.headers?.["x-amz-bucket-region"] ||
+            err?.$response?.headers?.["X-Amz-Bucket-Region"];
+
+        const code = err?.Code || err?.code || err?.name;
+        const isRedirect =
+            code === "PermanentRedirect" ||
+            code === "AuthorizationHeaderMalformed" ||
+            err?.$metadata?.httpStatusCode === 301;
+
+        if (!endpoint && isRedirect && hintedRegion && hintedRegion !== region) {
+            console.warn(
+                `⚠️ S3 endpoint redirect detected. Retrying with bucket region "${hintedRegion}" (was "${region}").`
+            );
+            try {
+                return await attemptUpload(hintedRegion);
+            } catch (retryErr) {
+                err = retryErr;
+            }
+        }
+
         const details = {
             name: err?.name,
             message: err?.message,
@@ -78,6 +106,11 @@ export async function uploadSubmissionToS3(submissionData) {
             region,
             bucket,
             endpoint: process.env.S3_ENDPOINT || null,
+            hintedRegion:
+                err?.BucketRegion ||
+                err?.$response?.headers?.["x-amz-bucket-region"] ||
+                err?.$response?.headers?.["X-Amz-Bucket-Region"] ||
+                null,
         };
         console.error("❌ S3 upload failed:", details);
         if (err?.stack) console.error(err.stack);

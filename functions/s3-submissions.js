@@ -49,13 +49,13 @@ export const handler = async (event) => {
 
     const bucket = process.env.S3_BUCKET_NAME;
 
-    // Prefer standard AWS env vars, but allow legacy ASSURE_* names.
+    // Prefer ASSURE_* env vars (explicit project convention), then fall back to standard AWS vars.
     const region =
-        process.env.ASSURE_AWS_REGION || "ap-southeast-2";
+        process.env.ASSURE_AWS_REGION || process.env.AWS_REGION || "ap-southeast-2";
     const accessKeyId =
-        process.env.ASSURE_AWS_ACCESS_KEY_ID;
+        process.env.ASSURE_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
     const secretAccessKey =
-        process.env.ASSURE_AWS_SECRET_ACCESS_KEY;
+        process.env.ASSURE_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
 
     if (!bucket || !accessKeyId || !secretAccessKey) {
         return {
@@ -64,28 +64,65 @@ export const handler = async (event) => {
             body: JSON.stringify({
                 error: "S3 not configured",
                 message:
-                    "S3_BUCKET_NAME and AWS credentials must be set (ASSURE_AWS_ACCESS_KEY_ID/ASSURE_AWS_SECRET_ACCESS_KEY)",
+                    "S3_BUCKET_NAME and AWS credentials must be set (AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY or ASSURE_AWS_ACCESS_KEY_ID/ASSURE_AWS_SECRET_ACCESS_KEY)",
             }),
         };
     }
 
     try {
         const endpoint = process.env.S3_ENDPOINT || undefined;
-        const client = new S3Client({
-            region,
-            ...(endpoint && { endpoint }),
-            credentials: { accessKeyId, secretAccessKey },
-        });
+
+        const makeClient = (attemptRegion) =>
+            new S3Client({
+                region: attemptRegion,
+                ...(endpoint && { endpoint }),
+                credentials: { accessKeyId, secretAccessKey },
+            });
+
+        const send = async (client, command) => client.send(command);
+
+        let client = makeClient(region);
         const prefix = "FormSubmissions/";
         const maxKeys = parseInt(event.queryStringParameters?.limit || "100", 10) || 100;
 
-        const listResult = await client.send(
-            new ListObjectsV2Command({
-                Bucket: bucket,
-                Prefix: prefix,
-                MaxKeys: Math.min(maxKeys, 500),
-            })
-        );
+        let listResult;
+        try {
+            listResult = await send(
+                client,
+                new ListObjectsV2Command({
+                    Bucket: bucket,
+                    Prefix: prefix,
+                    MaxKeys: Math.min(maxKeys, 500),
+                })
+            );
+        } catch (err) {
+            const hintedRegion =
+                err?.BucketRegion ||
+                err?.$response?.headers?.["x-amz-bucket-region"] ||
+                err?.$response?.headers?.["X-Amz-Bucket-Region"];
+            const code = err?.Code || err?.code || err?.name;
+            const isRedirect =
+                code === "PermanentRedirect" ||
+                code === "AuthorizationHeaderMalformed" ||
+                err?.$metadata?.httpStatusCode === 301;
+
+            if (!endpoint && isRedirect && hintedRegion && hintedRegion !== region) {
+                console.warn(
+                    `⚠️ S3 endpoint redirect detected. Retrying list with bucket region "${hintedRegion}" (was "${region}").`
+                );
+                client = makeClient(hintedRegion);
+                listResult = await send(
+                    client,
+                    new ListObjectsV2Command({
+                        Bucket: bucket,
+                        Prefix: prefix,
+                        MaxKeys: Math.min(maxKeys, 500),
+                    })
+                );
+            } else {
+                throw err;
+            }
+        }
 
         const keys = (listResult.Contents || [])
             .filter((obj) => obj.Key && obj.Key.endsWith(".json"))
@@ -96,9 +133,7 @@ export const handler = async (event) => {
         const submissions = [];
         for (const key of keys) {
             try {
-                const getResult = await client.send(
-                    new GetObjectCommand({ Bucket: bucket, Key: key })
-                );
+                const getResult = await send(client, new GetObjectCommand({ Bucket: bucket, Key: key }));
                 const body = await getResult.Body.transformToString();
                 const data = JSON.parse(body);
                 submissions.push({ key, ...data });
