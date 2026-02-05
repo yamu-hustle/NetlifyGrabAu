@@ -148,6 +148,30 @@
         return valid
     }
 
+    const OVERLAY_ID = 'kk-form-submit-overlay'
+
+    function showFormOverlay() {
+        if (document.getElementById(OVERLAY_ID)) return
+        const overlay = document.createElement('div')
+        overlay.id = OVERLAY_ID
+        overlay.setAttribute('aria-live', 'polite')
+        overlay.setAttribute('aria-busy', 'true')
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;'
+        overlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:kk-spin 0.8s linear infinite"></div><span style="color:#fff;font-size:16px;font-weight:500">Submitting…</span>'
+        if (!document.getElementById('kk-form-overlay-styles')) {
+            const style = document.createElement('style')
+            style.id = 'kk-form-overlay-styles'
+            style.textContent = '@keyframes kk-spin{to{transform:rotate(360deg)}}'
+            document.head.appendChild(style)
+        }
+        document.body.appendChild(overlay)
+    }
+
+    function hideFormOverlay() {
+        const el = document.getElementById(OVERLAY_ID)
+        if (el) el.remove()
+    }
+
     async function submitForm(form) {
         console.log('Submitting data');
 
@@ -173,6 +197,7 @@
 
         const submitBtn = form.querySelector('[type="submit"]')
         if (submitBtn) submitBtn.setAttribute('disabled', 'true')
+        showFormOverlay()
 
         try {
             const xhr = new XMLHttpRequest()
@@ -213,8 +238,10 @@
                         })
                     }
 
+                    hideFormOverlay()
                     window.location.href = '/thank-you/'
                 } else {
+                    hideFormOverlay()
                     if (msg) {
                         msg.classList.remove('success')
                         msg.classList.add('error')
@@ -230,6 +257,7 @@
                 }
             }
             xhr.onerror = function () {
+                hideFormOverlay()
                 console.error('❌ XHR Error:', {
                     status: xhr.status,
                     statusText: xhr.statusText,
@@ -245,6 +273,7 @@
             }
             xhr.send(JSON.stringify(body))
         } catch (err) {
+            hideFormOverlay()
             console.error('❌ Exception during form submission:', err)
             const msg = form.querySelector('.form-messages')
             if (msg) {
