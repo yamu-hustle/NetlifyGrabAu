@@ -12,7 +12,7 @@ function getAuthData() {
                 return data;
             }
         }
-    } catch (_) {}
+    } catch (_) { }
     return null;
 }
 
@@ -83,20 +83,56 @@ function matchesSearch(sub, term) {
     );
 }
 
-/** Apply date range and search filters, then render. */
+/** Get unique Lead Source values from submissions, sorted. */
+function getUniqueLeadSources() {
+    const set = new Set();
+    allSubmissions.forEach((sub) => {
+        const v = (sub.payload || {})["Lead Source"];
+        if (v != null && String(v).trim()) set.add(String(v).trim());
+    });
+    return Array.from(set).sort();
+}
+
+/** Populate Lead Source filter from current submissions. */
+function populateLeadSourceFilter() {
+    const el = document.getElementById("lead-source-filter");
+    if (!el) return;
+    const selected = new Set(Array.from(el.selectedOptions).map((o) => o.value));
+    el.innerHTML = "";
+    getUniqueLeadSources().forEach((source) => {
+        const opt = document.createElement("option");
+        opt.value = source;
+        opt.textContent = source;
+        if (selected.has(source)) opt.selected = true;
+        el.appendChild(opt);
+    });
+}
+
+/** Apply date range, search, and lead source filters, then render. */
 function applyFilters() {
     const searchEl = document.getElementById("search-input");
     const dateFromEl = document.getElementById("date-from");
     const dateToEl = document.getElementById("date-to");
+    const leadSourceEl = document.getElementById("lead-source-filter");
     const search = searchEl?.value ?? "";
     const fromStr = dateFromEl?.value;
     const toStr = dateToEl?.value;
+    const selectedLeadSources =
+        leadSourceEl && leadSourceEl.selectedOptions
+            ? Array.from(leadSourceEl.selectedOptions).map((o) => o.value)
+            : [];
 
     const fromDate = fromStr ? new Date(fromStr + "T00:00:00") : null;
     const toDate = toStr ? new Date(toStr + "T23:59:59") : null;
+    const filterByLeadSource = selectedLeadSources.length > 0;
 
     const filtered = allSubmissions.filter((sub) => {
         if (!matchesSearch(sub, search)) return false;
+        if (filterByLeadSource) {
+            const ls = (sub.payload || {})["Lead Source"];
+            const value = ls != null ? String(ls).trim() : "";
+            if (!selectedLeadSources.includes(value)) return false;
+        }
         const d = getSubmissionDate(sub);
         if (d) {
             if (fromDate && d < fromDate) return false;
@@ -128,7 +164,7 @@ function renderSubmissions(submissions) {
         const state = escapeHtml(payload["State"] || "—");
         const prefTime = escapeHtml(payload["Preferred Time to Call"] || "—");
         const leadSource = escapeHtml(payload["Lead Source"] || "—");
-        const meta = [phone, state, prefTime, leadSource].join(" · ");
+        const meta = [phone, state, prefTime].join(" · ");
         const comments = payload["Comments or Questions"];
         const card = document.createElement("div");
         card.className = "bg-white rounded-lg shadow overflow-hidden";
@@ -137,6 +173,7 @@ function renderSubmissions(submissions) {
                 <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 min-w-0">
                     <span class="font-semibold text-gray-800">${escapeHtml(payload["First Name"] || "")} ${escapeHtml(payload["Last Name"] || "")}</span>
                     <span class="text-gray-500 text-sm truncate">${escapeHtml(payload["Email"] || "")}</span>
+                    <span class="bg-sky-600 text-white text-xs font-medium px-2.5 py-0.5 rounded">${leadSource}</span>
                 </div>
                 <span class="text-xs text-gray-400 whitespace-nowrap">${receivedAt}</span>
             </div>
@@ -179,6 +216,7 @@ async function loadAndRender() {
         allSubmissions = await fetchSubmissions(password);
         loading.classList.add("hidden");
         if (filters) filters.classList.remove("hidden");
+        populateLeadSourceFilter();
         applyFilters();
     } catch (err) {
         loading.classList.add("hidden");
@@ -191,9 +229,11 @@ function clearFilters() {
     const searchEl = document.getElementById("search-input");
     const dateFromEl = document.getElementById("date-from");
     const dateToEl = document.getElementById("date-to");
+    const leadSourceEl = document.getElementById("lead-source-filter");
     if (searchEl) searchEl.value = "";
     if (dateFromEl) dateFromEl.value = "";
     if (dateToEl) dateToEl.value = "";
+    if (leadSourceEl) Array.from(leadSourceEl.options).forEach((o) => (o.selected = false));
     applyFilters();
 }
 
@@ -219,6 +259,7 @@ function init() {
     searchEl?.addEventListener("input", onFilterChange);
     dateFromEl?.addEventListener("change", onFilterChange);
     dateToEl?.addEventListener("change", onFilterChange);
+    document.getElementById("lead-source-filter")?.addEventListener("change", onFilterChange);
 
     clearFiltersBtn?.addEventListener("click", clearFilters);
 }
