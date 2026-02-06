@@ -5,6 +5,8 @@ let allSubmissions = [];
 let hasMore = false;
 let nextToken = null;
 let isLoading = false;
+let selectedLeadSources = new Set();
+let allLeadSources = [];
 
 function getAuthData() {
     try {
@@ -71,6 +73,12 @@ function formatLocalDateTime(isoString) {
     });
 }
 
+/** Capitalize lead source for display (title case). */
+function capitalizeLeadSource(s) {
+    if (s == null || !String(s).trim()) return "";
+    return String(s).trim().replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
 /** Get submission date as Date (for filtering). Falls back to parsing key path if no receivedAt. */
 function getSubmissionDate(sub) {
     if (sub.receivedAt) {
@@ -115,19 +123,84 @@ function getUniqueLeadSources() {
     return Array.from(set).sort();
 }
 
+/** Render selected lead source tags. */
+function renderLeadSourceTags() {
+    const tagsContainer = document.getElementById("lead-source-tags");
+    if (!tagsContainer) return;
+    tagsContainer.innerHTML = "";
+    
+    selectedLeadSources.forEach((source) => {
+        const tag = document.createElement("span");
+        tag.className = "inline-flex items-center gap-1 px-2 py-0.5 bg-sky-100 text-sky-800 text-xs font-medium rounded";
+        tag.innerHTML = `
+            ${escapeHtml(capitalizeLeadSource(source))}
+            <button type="button" class="hover:text-sky-900" data-remove="${escapeHtml(source)}">×</button>
+        `;
+        tag.querySelector("button").addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleLeadSource(source);
+        });
+        tagsContainer.appendChild(tag);
+    });
+}
+
+/** Filter and render lead source options based on search. */
+function filterLeadSourceOptions(searchTerm = "") {
+    const optionsContainer = document.getElementById("lead-source-options");
+    if (!optionsContainer) return;
+    
+    const term = searchTerm.toLowerCase();
+    const filtered = allLeadSources.filter((source) => 
+        capitalizeLeadSource(source).toLowerCase().includes(term)
+    );
+    
+    optionsContainer.innerHTML = "";
+    
+    if (filtered.length === 0) {
+        optionsContainer.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">No matches</div>';
+        return;
+    }
+    
+    filtered.forEach((source) => {
+        const option = document.createElement("label");
+        option.className = "flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = source;
+        checkbox.checked = selectedLeadSources.has(source);
+        checkbox.className = "rounded border-gray-300 text-sky-600 focus:ring-sky-500";
+        checkbox.addEventListener("change", () => toggleLeadSource(source));
+        
+        option.appendChild(checkbox);
+        option.appendChild(document.createTextNode(capitalizeLeadSource(source)));
+        option.addEventListener("click", (e) => {
+            if (e.target !== checkbox) checkbox.click();
+        });
+        optionsContainer.appendChild(option);
+    });
+}
+
+/** Toggle lead source selection. */
+function toggleLeadSource(source) {
+    if (selectedLeadSources.has(source)) {
+        selectedLeadSources.delete(source);
+    } else {
+        selectedLeadSources.add(source);
+    }
+    renderLeadSourceTags();
+    filterLeadSourceOptions(document.getElementById("lead-source-search")?.value || "");
+    applyFilters();
+}
+
 /** Populate Lead Source filter from current submissions. */
 function populateLeadSourceFilter() {
-    const el = document.getElementById("lead-source-filter");
-    if (!el) return;
-    const selected = new Set(Array.from(el.selectedOptions).map((o) => o.value));
-    el.innerHTML = "";
-    getUniqueLeadSources().forEach((source) => {
-        const opt = document.createElement("option");
-        opt.value = source;
-        opt.textContent = source;
-        if (selected.has(source)) opt.selected = true;
-        el.appendChild(opt);
-    });
+    allLeadSources = getUniqueLeadSources();
+    filterLeadSourceOptions();
+}
+
+/** Get selected lead sources as array. */
+function getSelectedLeadSources() {
+    return Array.from(selectedLeadSources);
 }
 
 /** Apply date range, search, and lead source filters, then render. */
@@ -135,25 +208,21 @@ function applyFilters() {
     const searchEl = document.getElementById("search-input");
     const dateFromEl = document.getElementById("date-from");
     const dateToEl = document.getElementById("date-to");
-    const leadSourceEl = document.getElementById("lead-source-filter");
     const search = searchEl?.value ?? "";
     const fromStr = dateFromEl?.value;
     const toStr = dateToEl?.value;
-    const selectedLeadSources =
-        leadSourceEl && leadSourceEl.selectedOptions
-            ? Array.from(leadSourceEl.selectedOptions).map((o) => o.value)
-            : [];
+    const selectedLeadSourcesArray = getSelectedLeadSources();
 
     const fromDate = fromStr ? new Date(fromStr + "T00:00:00") : null;
     const toDate = toStr ? new Date(toStr + "T23:59:59") : null;
-    const filterByLeadSource = selectedLeadSources.length > 0;
+    const filterByLeadSource = selectedLeadSourcesArray.length > 0;
 
     const filtered = allSubmissions.filter((sub) => {
         if (!matchesSearch(sub, search)) return false;
         if (filterByLeadSource) {
             const ls = (sub.payload || {})["Lead Source"];
             const value = ls != null ? String(ls).trim() : "";
-            if (!selectedLeadSources.includes(value)) return false;
+            if (!selectedLeadSourcesArray.includes(value)) return false;
         }
         const d = getSubmissionDate(sub);
         if (d) {
@@ -196,7 +265,7 @@ function renderSubmissions(submissions) {
         const phone = escapeHtml(payload["Mobile"] || "—");
         const state = escapeHtml(payload["State"] || "—");
         const prefTime = escapeHtml(payload["Preferred Time to Call"] || "—");
-        const leadSource = escapeHtml(payload["Lead Source"] || "—");
+        const leadSource = escapeHtml(capitalizeLeadSource(payload["Lead Source"]) || "—");
         const meta = [phone, state, prefTime].join(" · ");
         const comments = payload["Comments or Questions"];
         const card = document.createElement("div");
@@ -294,11 +363,14 @@ function clearFilters() {
     const searchEl = document.getElementById("search-input");
     const dateFromEl = document.getElementById("date-from");
     const dateToEl = document.getElementById("date-to");
-    const leadSourceEl = document.getElementById("lead-source-filter");
+    const leadSourceSearch = document.getElementById("lead-source-search");
     if (searchEl) searchEl.value = "";
     if (dateFromEl) dateFromEl.value = "";
     if (dateToEl) dateToEl.value = "";
-    if (leadSourceEl) Array.from(leadSourceEl.options).forEach((o) => (o.selected = false));
+    if (leadSourceSearch) leadSourceSearch.value = "";
+    selectedLeadSources.clear();
+    renderLeadSourceTags();
+    filterLeadSourceOptions();
     // When clearing filters, reload from scratch (date filters affect server-side fetch)
     loadAndRender();
 }
@@ -311,6 +383,11 @@ function init() {
     const dateToEl = document.getElementById("date-to");
     const clearFiltersBtn = document.getElementById("clear-filters-btn");
     const loadMoreBtn = document.getElementById("load-more-btn");
+    
+    // Lead source multi-select elements
+    const leadSourceInput = document.getElementById("lead-source-filter-input");
+    const leadSourceSearch = document.getElementById("lead-source-search");
+    const leadSourceDropdown = document.getElementById("lead-source-dropdown");
 
     loadAndRender();
 
@@ -327,10 +404,37 @@ function init() {
     // Date filters affect server-side, so reload when changed
     dateFromEl?.addEventListener("change", () => loadAndRender());
     dateToEl?.addEventListener("change", () => loadAndRender());
-    document.getElementById("lead-source-filter")?.addEventListener("change", onFilterChange);
 
     clearFiltersBtn?.addEventListener("click", clearFilters);
     loadMoreBtn?.addEventListener("click", () => loadAndRender(true));
+
+    // Lead source multi-select dropdown behavior
+    if (leadSourceInput && leadSourceSearch && leadSourceDropdown) {
+        // Open dropdown on click
+        leadSourceInput.addEventListener("click", () => {
+            leadSourceDropdown.classList.remove("hidden");
+            leadSourceSearch.focus();
+        });
+
+        // Search filtering
+        leadSourceSearch.addEventListener("input", (e) => {
+            filterLeadSourceOptions(e.target.value);
+        });
+
+        // Close on click outside
+        document.addEventListener("click", (e) => {
+            if (!leadSourceInput.contains(e.target) && !leadSourceDropdown.contains(e.target)) {
+                leadSourceDropdown.classList.add("hidden");
+                leadSourceSearch.value = "";
+                filterLeadSourceOptions();
+            }
+        });
+
+        // Prevent dropdown close when clicking inside
+        leadSourceDropdown.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+    }
 }
 
 init();
