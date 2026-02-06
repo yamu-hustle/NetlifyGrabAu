@@ -2,6 +2,9 @@ const STORAGE_KEY = "submissionsAuth";
 const API_URL = "/.netlify/functions/s3-submissions";
 
 let allSubmissions = [];
+let hasMore = false;
+let nextToken = null;
+let isLoading = false;
 
 function getAuthData() {
     try {
@@ -21,8 +24,21 @@ function getStoredPassword() {
     return auth ? auth.password : null;
 }
 
-async function fetchSubmissions(password) {
-    const res = await fetch(API_URL, {
+async function fetchSubmissions(password, append = false) {
+    if (isLoading) return [];
+    isLoading = true;
+
+    const params = new URLSearchParams();
+    if (nextToken && append) params.append("continuationToken", nextToken);
+
+    // Pass date filters to server for server-side filtering
+    const dateFrom = document.getElementById("date-from")?.value;
+    const dateTo = document.getElementById("date-to")?.value;
+    if (dateFrom) params.append("dateFrom", dateFrom);
+    if (dateTo) params.append("dateTo", dateTo);
+
+    const url = `${API_URL}?${params}`;
+    const res = await fetch(url, {
         method: "GET",
         headers: {
             "X-Submissions-Password": password,
@@ -30,11 +46,17 @@ async function fetchSubmissions(password) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+        isLoading = false;
         if (res.status === 401) {
             throw new Error("Invalid password");
         }
         throw new Error(data.message || data.error || "Failed to load submissions");
     }
+
+    hasMore = data.hasMore || false;
+    nextToken = data.nextToken || null;
+    isLoading = false;
+
     return data.submissions || [];
 }
 
@@ -142,6 +164,17 @@ function applyFilters() {
     });
 
     renderSubmissions(filtered);
+    updateSubmissionCount(filtered.length);
+}
+
+function updateSubmissionCount(filteredCount) {
+    const countEl = document.getElementById("submission-count");
+    if (!countEl) return;
+    if (filteredCount < allSubmissions.length) {
+        countEl.textContent = `Showing ${filteredCount} of ${allSubmissions.length} submissions (filtered)`;
+    } else {
+        countEl.textContent = `Showing ${allSubmissions.length} submission${allSubmissions.length !== 1 ? 's' : ''}${hasMore ? ' (load more to see all)' : ''}`;
+    }
 }
 
 function renderSubmissions(submissions) {
@@ -193,16 +226,28 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-async function loadAndRender() {
+async function loadAndRender(append = false) {
     const loading = document.getElementById("loading");
     const error = document.getElementById("error");
     const list = document.getElementById("submissions-list");
     const filters = document.getElementById("filters");
+    const loadMoreBtn = document.getElementById("load-more-btn");
+    const loadMoreWrap = document.getElementById("load-more-wrap");
 
-    loading.classList.remove("hidden");
-    error.classList.add("hidden");
-    list.innerHTML = "";
-    if (filters) filters.classList.add("hidden");
+    if (!append) {
+        loading.classList.remove("hidden");
+        error.classList.add("hidden");
+        list.innerHTML = "";
+        if (filters) filters.classList.add("hidden");
+        if (loadMoreWrap) loadMoreWrap.classList.add("hidden");
+        allSubmissions = [];
+        nextToken = null;
+    } else {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.textContent = "Loading...";
+        }
+    }
 
     const password = getStoredPassword();
     if (!password) {
@@ -213,15 +258,35 @@ async function loadAndRender() {
     }
 
     try {
-        allSubmissions = await fetchSubmissions(password);
+        const newSubmissions = await fetchSubmissions(password, append);
+        if (append) {
+            allSubmissions.push(...newSubmissions);
+        } else {
+            allSubmissions = newSubmissions;
+        }
         loading.classList.add("hidden");
         if (filters) filters.classList.remove("hidden");
         populateLeadSourceFilter();
         applyFilters();
+
+        // Update load more button
+        if (loadMoreBtn && loadMoreWrap) {
+            loadMoreBtn.textContent = "Load More";
+            loadMoreBtn.disabled = false;
+            if (hasMore) {
+                loadMoreWrap.classList.remove("hidden");
+            } else {
+                loadMoreWrap.classList.add("hidden");
+            }
+        }
     } catch (err) {
         loading.classList.add("hidden");
         error.textContent = err.message;
         error.classList.remove("hidden");
+        if (loadMoreBtn) {
+            loadMoreBtn.textContent = "Load More";
+            loadMoreBtn.disabled = false;
+        }
     }
 }
 
@@ -234,7 +299,8 @@ function clearFilters() {
     if (dateFromEl) dateFromEl.value = "";
     if (dateToEl) dateToEl.value = "";
     if (leadSourceEl) Array.from(leadSourceEl.options).forEach((o) => (o.selected = false));
-    applyFilters();
+    // When clearing filters, reload from scratch (date filters affect server-side fetch)
+    loadAndRender();
 }
 
 function init() {
@@ -244,6 +310,7 @@ function init() {
     const dateFromEl = document.getElementById("date-from");
     const dateToEl = document.getElementById("date-to");
     const clearFiltersBtn = document.getElementById("clear-filters-btn");
+    const loadMoreBtn = document.getElementById("load-more-btn");
 
     loadAndRender();
 
@@ -257,11 +324,13 @@ function init() {
 
     const onFilterChange = () => applyFilters();
     searchEl?.addEventListener("input", onFilterChange);
-    dateFromEl?.addEventListener("change", onFilterChange);
-    dateToEl?.addEventListener("change", onFilterChange);
+    // Date filters affect server-side, so reload when changed
+    dateFromEl?.addEventListener("change", () => loadAndRender());
+    dateToEl?.addEventListener("change", () => loadAndRender());
     document.getElementById("lead-source-filter")?.addEventListener("change", onFilterChange);
 
     clearFiltersBtn?.addEventListener("click", clearFilters);
+    loadMoreBtn?.addEventListener("click", () => loadAndRender(true));
 }
 
 init();
