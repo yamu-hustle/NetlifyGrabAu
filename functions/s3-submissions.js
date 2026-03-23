@@ -21,29 +21,42 @@ function checkAuth(event) {
     return password === requiredPassword;
 }
 
-/** Generate month prefixes for date range (YYYY/MM format). */
-function generateMonthPrefixes(fromDate, toDate) {
+/** Generate UTC month prefixes for date range (YYYY/MM format). */
+function generateMonthPrefixesUTC(fromDateUtcIso, toDateUtcIso) {
     const prefixes = [];
-    const start = new Date(fromDate);
-    const end = new Date(toDate);
-    const current = new Date(start.getFullYear(), start.getMonth(), 1);
+    const start = new Date(fromDateUtcIso);
+    const end = new Date(toDateUtcIso);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return prefixes;
+    const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
 
     while (current <= end) {
-        const year = current.getFullYear();
-        const month = String(current.getMonth() + 1).padStart(2, "0");
+        const year = current.getUTCFullYear();
+        const month = String(current.getUTCMonth() + 1).padStart(2, "0");
         prefixes.push(`${year}/${month}`);
-        current.setMonth(current.getMonth() + 1);
+        current.setUTCMonth(current.getUTCMonth() + 1);
     }
 
     return prefixes;
 }
 
-/** Check if S3 key date falls within date range. */
-function isInDateRange(key, fromDate, toDate) {
-    const match = key.match(/(\d{4})-(\d{2})-(\d{2})_/);
-    if (!match) return false;
-    const keyDate = `${match[1]}-${match[2]}-${match[3]}`;
-    return keyDate >= fromDate && keyDate <= toDate;
+function parseUtcDateBounds(event) {
+    const dateFromUtc = event.queryStringParameters?.dateFromUtc;
+    const dateToUtc = event.queryStringParameters?.dateToUtc;
+    const from = dateFromUtc ? new Date(dateFromUtc) : null;
+    const to = dateToUtc ? new Date(dateToUtc) : null;
+    const hasValidFrom = from && !Number.isNaN(from.getTime());
+    const hasValidTo = to && !Number.isNaN(to.getTime());
+    return {
+        from: hasValidFrom ? from : null,
+        to: hasValidTo ? to : null,
+        valid: hasValidFrom || hasValidTo,
+    };
+}
+
+function getSubmissionReceivedAt(submission) {
+    const d = new Date(submission?.receivedAt);
+    if (Number.isNaN(d.getTime())) return null;
+    return d;
 }
 
 export const handler = async (event) => {
@@ -112,16 +125,16 @@ export const handler = async (event) => {
         // Pagination and filtering parameters
         const limit = parseInt(event.queryStringParameters?.limit || "50", 10) || 50;
         const continuationToken = event.queryStringParameters?.continuationToken;
-        const dateFrom = event.queryStringParameters?.dateFrom;
-        const dateTo = event.queryStringParameters?.dateTo;
+        const utcRange = parseUtcDateBounds(event);
 
         let keysToFetch = [];
         let isTruncated = false;
         let nextContinuationToken = null;
 
         // Server-side date filtering: list specific month folders if date range specified
-        if (dateFrom && dateTo) {
-            const monthPrefixes = generateMonthPrefixes(dateFrom, dateTo);
+        if (utcRange.valid && utcRange.from) {
+            const rangeEnd = utcRange.to || new Date();
+            const monthPrefixes = generateMonthPrefixesUTC(utcRange.from.toISOString(), rangeEnd.toISOString());
             for (const monthPrefix of monthPrefixes) {
                 try {
                     const monthResult = await send(
@@ -134,7 +147,7 @@ export const handler = async (event) => {
                     );
                     if (monthResult.Contents) {
                         const filtered = monthResult.Contents.filter(
-                            (obj) => obj.Key && obj.Key.endsWith(".json") && isInDateRange(obj.Key, dateFrom, dateTo)
+                            (obj) => obj.Key && obj.Key.endsWith(".json")
                         );
                         keysToFetch.push(...filtered);
                     }
@@ -144,8 +157,6 @@ export const handler = async (event) => {
             }
             // Sort by LastModified descending
             keysToFetch.sort((a, b) => (b.LastModified || 0) - (a.LastModified || 0));
-            // For date-filtered requests, we slice to limit but don't support pagination (would need more complex logic)
-            keysToFetch = keysToFetch.slice(0, limit);
         } else {
             // Normal listing with pagination support
             let listResult;
@@ -205,7 +216,10 @@ export const handler = async (event) => {
                         const getResult = await send(client, new GetObjectCommand({ Bucket: bucket, Key: key }));
                         const body = await getResult.Body.transformToString();
                         const data = JSON.parse(body);
-                        return { key, ...data };
+                        const lastModified = obj?.LastModified
+                            ? new Date(obj.LastModified).toISOString()
+                            : null;
+                        return { key, lastModified, ...data };
                     } catch (err) {
                         console.error("Failed to fetch object:", key, err.message);
                         return null;
@@ -215,12 +229,27 @@ export const handler = async (event) => {
             submissions.push(...batchResults.filter(Boolean));
         }
 
+        // Apply accurate UTC bounds filtering using receivedAt.
+        if (utcRange.valid) {
+            keysToFetch = submissions.filter((sub) => {
+                const d = getSubmissionReceivedAt(sub);
+                if (!d) return false;
+                if (utcRange.from && d < utcRange.from) return false;
+                if (utcRange.to && d > utcRange.to) return false;
+                return true;
+            });
+        } else {
+            keysToFetch = submissions;
+        }
+
+        const limitedSubmissions = keysToFetch.slice(0, limit);
+
         return {
             statusCode: 200,
             headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify({
-                submissions,
-                count: submissions.length,
+                submissions: limitedSubmissions,
+                count: limitedSubmissions.length,
                 hasMore: isTruncated,
                 nextToken: nextContinuationToken,
             }),

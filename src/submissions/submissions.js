@@ -38,6 +38,14 @@ async function fetchSubmissions(password, append = false) {
     const dateTo = document.getElementById("date-to")?.value;
     if (dateFrom) params.append("dateFrom", dateFrom);
     if (dateTo) params.append("dateTo", dateTo);
+    if (dateFrom) {
+        const fromLocal = new Date(`${dateFrom}T00:00:00`);
+        params.append("dateFromUtc", fromLocal.toISOString());
+    }
+    if (dateTo) {
+        const toLocal = new Date(`${dateTo}T23:59:59.999`);
+        params.append("dateToUtc", toLocal.toISOString());
+    }
 
     const url = `${API_URL}?${params}`;
     const res = await fetch(url, {
@@ -73,6 +81,11 @@ function formatLocalDateTime(isoString) {
     });
 }
 
+/** Get canonical timestamp ISO string from submission payload (S3 LastModified first). */
+function getSubmissionTimestampIso(sub) {
+    return sub?.lastModified || sub?.receivedAt || null;
+}
+
 /** Capitalize lead source for display (title case). */
 function capitalizeLeadSource(s) {
     if (s == null || !String(s).trim()) return "";
@@ -81,8 +94,9 @@ function capitalizeLeadSource(s) {
 
 /** Get submission date as Date (for filtering). Falls back to parsing key path if no receivedAt. */
 function getSubmissionDate(sub) {
-    if (sub.receivedAt) {
-        const d = new Date(sub.receivedAt);
+    const ts = getSubmissionTimestampIso(sub);
+    if (ts) {
+        const d = new Date(ts);
         if (!Number.isNaN(d.getTime())) return d;
     }
     if (sub.key) {
@@ -259,30 +273,62 @@ function renderSubmissions(submissions) {
         return;
     }
 
-    submissions.forEach((sub) => {
-        const payload = sub.payload || {};
-        const receivedAt = formatLocalDateTime(sub.receivedAt);
-        const phone = escapeHtml(payload["Mobile"] || "—");
-        const state = escapeHtml(payload["State"] || "—");
-        const prefTime = escapeHtml(payload["Preferred Time to Call"] || "—");
-        const leadSource = escapeHtml(capitalizeLeadSource(payload["Lead Source"]) || "—");
-        const meta = [phone, state, prefTime].join(" · ");
-        const comments = payload["Comments or Questions"];
+    const grouped = new Map();
+    submissions.forEach((sub, idx) => {
+        const email = String(sub?.payload?.["Email"] || "").trim().toLowerCase();
+        const key = email || `__no_email__${idx}`;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(sub);
+    });
+
+    grouped.forEach((items) => {
+        items.sort((a, b) => {
+            const ad = getSubmissionDate(a)?.getTime() || 0;
+            const bd = getSubmissionDate(b)?.getTime() || 0;
+            return bd - ad;
+        });
+        const newest = items[0];
+        const payload = newest.payload || {};
+        const groupEmail = escapeHtml(payload["Email"] || "—");
+        const groupName = `${escapeHtml(payload["First Name"] || "")} ${escapeHtml(payload["Last Name"] || "")}`.trim() || "Unknown";
         const card = document.createElement("div");
         card.className = "bg-white rounded-lg shadow overflow-hidden";
-        card.innerHTML = `
-            <div class="px-4 py-2.5 flex flex-wrap justify-between items-center gap-2 border-b border-gray-100">
-                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 min-w-0">
-                    <span class="font-semibold text-gray-800">${escapeHtml(payload["First Name"] || "")} ${escapeHtml(payload["Last Name"] || "")}</span>
-                    <span class="text-gray-500 text-sm truncate">${escapeHtml(payload["Email"] || "")}</span>
-                    <span class="bg-sky-600 text-white text-xs font-medium px-2.5 py-0.5 rounded">${leadSource}</span>
+
+        const entries = items.map((sub, idx) => {
+            const p = sub.payload || {};
+            const receivedAt = formatLocalDateTime(getSubmissionTimestampIso(sub));
+            const phone = escapeHtml(p["Mobile"] || "—");
+            const state = escapeHtml(p["State"] || "—");
+            const prefTime = escapeHtml(p["Preferred Time to Call"] || "—");
+            const leadSource = escapeHtml(capitalizeLeadSource(p["Lead Source"]) || "—");
+            const meta = [phone, state, prefTime].join(" · ");
+            const comments = p["Comments or Questions"];
+            const topBorder = idx === 0 ? "" : " border-t border-gray-100";
+            return `
+                <div class="px-4 py-2.5${topBorder}">
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="bg-sky-600 text-white text-xs font-medium px-2.5 py-0.5 rounded">${leadSource}</span>
+                        </div>
+                        <span class="text-xs text-gray-400 whitespace-nowrap">${receivedAt}</span>
+                    </div>
+                    <div class="mt-1 text-sm text-gray-600">
+                        <span class="text-gray-500">${meta}</span>
+                    </div>
+                    ${comments ? `<div class="mt-1 text-sm text-gray-600"><span class="text-gray-500">Comments:</span> ${escapeHtml(comments)}</div>` : ""}
                 </div>
-                <span class="text-xs text-gray-400 whitespace-nowrap">${receivedAt}</span>
+            `;
+        }).join("");
+
+        card.innerHTML = `
+            <div class="px-4 py-2.5 flex flex-wrap justify-between items-center gap-2 border-b border-gray-100 bg-gray-50">
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 min-w-0">
+                    <span class="font-semibold text-gray-800">${groupName}</span>
+                    <span class="text-gray-500 text-sm truncate">${groupEmail}</span>
+                </div>
+                <span class="text-xs text-gray-500 whitespace-nowrap">${items.length} submission${items.length > 1 ? "s" : ""}</span>
             </div>
-            <div class="px-4 py-2 text-sm text-gray-600">
-                <span class="text-gray-500">${meta}</span>
-            </div>
-            ${comments ? `<div class="px-4 py-2 pt-0 text-sm text-gray-600 border-t border-gray-50"><span class="text-gray-500">Comments:</span> ${escapeHtml(comments)}</div>` : ""}
+            ${entries}
         `;
         container.appendChild(card);
     });

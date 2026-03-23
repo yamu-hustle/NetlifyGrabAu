@@ -1,6 +1,6 @@
 ; (function () {
     const FORM_SELECTOR = 'form._form._form_1._inline-form._dark.kk-validation'
-    const FUNCTION_URL = '/.netlify/functions/form-handler'
+    const FUNCTION_URL = '/.netlify/functions/form-handler-background'
 
 
     function getLeadSource() {
