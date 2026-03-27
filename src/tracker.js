@@ -3,7 +3,18 @@
     const FUNCTION_URL = '/.netlify/functions/form-handler-background'
 
 
+    function getUtmContent() {
+        const urlParams = new URLSearchParams(window.location.search)
+        const v = urlParams.get('utm_content')
+        return v ? String(v) : ''
+    }
+
     function getLeadSource() {
+        const urlParams = new URLSearchParams(window.location.search)
+        if (urlParams.get('gclid')) {
+            return 'GoogleAds'
+        }
+
         const hostname = window.location.hostname.toLowerCase()
         const path = window.location.pathname.toLowerCase()
 
@@ -184,6 +195,7 @@
             comment_or_question: getValue(form, '#comment_or_question'),
             time: getValue(form, '#time'),
             gclid: getGclid(),
+            utm_content: getUtmContent(),
             // optional debug passthrough if your function supports it
             leadSource: getLeadSource(),
             debug: 1,

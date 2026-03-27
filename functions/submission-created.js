@@ -88,6 +88,10 @@ export const handler = async (event) => {
             payload['Gclid'] = data.gclid;
         }
 
+        if (data.utm_content && String(data.utm_content).trim() !== '') {
+            payload['utm_content'] = String(data.utm_content).trim();
+        }
+
         console.log("🚀 Payload for Salesforce:", payload);
 
         // Test mode - return success without calling Salesforce

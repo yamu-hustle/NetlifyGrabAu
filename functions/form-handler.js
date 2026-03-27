@@ -90,6 +90,10 @@ export const handler = async (event) => {
             payload['Gclid'] = data.gclid;
         }
 
+        if (data.utm_content && String(data.utm_content).trim() !== '') {
+            payload['utm_content'] = String(data.utm_content).trim();
+        }
+
         console.log("🚀 Payload for Salesforce:", payload);
 
         // Upload to S3 for backup (runs in parallel; we will block success if it fails)
