@@ -1059,6 +1059,28 @@
                                         <textarea class="w-full pt-3 text-black border-0 placeholder:text-black h-44 bg-slate-50 text-medium lg:text-lg pl-14 rounded-3xl autofill:bg-white autofill:bg-none autofill:text-black" id="comment_or_question" name="comment_or_question" placeholder="Any comments or questions for our team?"></textarea>
                                     </div>
 
+                                    <div id="sms-consent-wrapper" class="mb-4 _form_element _full_width" style="display:none;">
+                                        <label class="flex items-start gap-3 cursor-pointer text-left">
+                                            <input type="checkbox" id="sms_consent" name="sms_consent" value="yes" class="mt-1 w-5 h-5 shrink-0 accent-blue-600 cursor-pointer" />
+                                            <span class="text-sm leading-snug text-white/90">I agree to receive recurring automated text messages at the phone number provided. 4–8 msgs/mo. Msg &amp; data rates may apply. Reply HELP for help and STOP to end. View our <a id="sms_tos_link" href="#" target="_blank" rel="noopener" class="underline hover:text-white">Terms of Service</a> and <a id="sms_pp_link" href="#" target="_blank" rel="noopener" class="underline hover:text-white">Privacy Policy</a>.</span>
+                                        </label>
+                                    </div>
+                                    <script>
+                                        (function() {
+                                            var host = window.location.hostname;
+                                            var assureDomain = 'assurescratchanddent.com';
+                                            if (host.endsWith('.com.au')) assureDomain = 'assurescratchanddent.com.au';
+                                            else if (host.endsWith('.in')) assureDomain = 'assurescratchanddent.in';
+                                            else if (host.endsWith('.co.nz')) assureDomain = 'assurescratchanddent.co.nz';
+                                            var SMS_TERMS_URL = 'https://' + assureDomain + '/terms-and-conditions';
+                                            var SMS_PRIVACY_URL = 'https://' + assureDomain + '/privacy-policy';
+                                            var tosLink = document.getElementById('sms_tos_link');
+                                            var ppLink = document.getElementById('sms_pp_link');
+                                            if (tosLink) tosLink.href = SMS_TERMS_URL;
+                                            if (ppLink) ppLink.href = SMS_PRIVACY_URL;
+                                        })();
+                                    </script>
+
                                     <div class="w-full mx-auto text-center xl:w-10/12 _button-wrapper _full_width">
                                         <button type="submit" id="_form_1_submit" type="submit" class="_submit inline-block w-full border-0 rounded-full mb-3 text-[15px] lg:text-lg uppercase font-bold px-5 py-4 lg:py-5 lg:px-5 whitespace-normal tracking-tight cursor-pointer bg-blue text-white transition duration-500  hover:no-underline hover:bg-sky-600 hover:text-white">PROTECT YOUR CAR WITH ASSURED NOW</button>
                                         <p class="w-full text-sm lg:text-[15px] lg:px-4 leading-[1.25]"> Join Assured Now To Get Unlimited On-Site Scratch & Dent Repair For Just $59/pm – Plus, Extra Membership Bonuses To Keep Your Car In Showroom Condition!</p>

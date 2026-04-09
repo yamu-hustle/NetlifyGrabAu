@@ -31,8 +31,8 @@
     }
 
     function getGclid() {
-        const input = document.querySelector('input[name="gclid"]')
-        return input && input.value ? input.value : ''
+        const v = new URLSearchParams(window.location.search).get('gclid')
+        return v != null && String(v).trim() !== '' ? String(v).trim() : ''
     }
 
     function validateEmail(value) {
@@ -148,6 +148,12 @@
                 showFieldError(stateEl, messages.required)
                 valid = false
             }
+        }
+
+        const smsConsentEl = form.querySelector('#sms_consent')
+        if (smsConsentEl && smsConsentEl.required && !smsConsentEl.checked) {
+            showFieldError(smsConsentEl, 'You must agree to receive text messages to continue.')
+            valid = false
         }
 
         const msg = form.querySelector('.form-messages')
